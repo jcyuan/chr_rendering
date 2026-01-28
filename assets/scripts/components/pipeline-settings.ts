@@ -1,0 +1,113 @@
+import { _decorator, Camera, CCBoolean, Component, rendering } from 'cc';
+import { EDITOR } from 'cc/env';
+import { BloomSettings, ColorGradingSettings, FSRSettings, FXAASettings, MSAASettings, ToneMappingSettings, PropertyNotifier } from '../pipeline/pass-settings';
+import { PipelineSettings } from '../pipeline/xq-pipeline-types';
+const { ccclass, property, executeInEditMode, disallowMultiple, requireComponent } = _decorator;
+
+@ccclass('XQPipelineSettings')
+@executeInEditMode
+@disallowMultiple
+@requireComponent(Camera)
+export class XQPipelineSettings extends Component implements PipelineSettings, PropertyNotifier {
+    private static _defaultSettings: XQPipelineSettings;
+    static get defaultSettings(): XQPipelineSettings {
+        if (!this._defaultSettings)
+            this._defaultSettings = new XQPipelineSettings();
+        return this._defaultSettings;
+    }
+
+    @property
+    private _enableShadingScale = false;
+    @property
+    get enableShadingScale() {
+        return this._enableShadingScale;
+    }
+    set enableShadingScale(v: boolean) {
+        this._enableShadingScale = v;
+        if (EDITOR)
+            this._tryEnableEditorPreview();
+    }
+
+    @property({ min: 0.1, max: 1, slide: true, step: 0.1 })
+    private _shadingScale = 0.7;
+    @property
+    get shadingScale(): number {
+        return this._shadingScale;
+    }
+    set shadingScale(v: number) {
+        this._shadingScale = v;
+        if (EDITOR) {
+            this._tryEnableEditorPreview();
+        }
+    }
+    
+    @property({ type: MSAASettings })
+    msaa = new MSAASettings(this);
+
+    @property({ type: FSRSettings })
+    fsr = new FSRSettings(this);
+
+    @property({ type: FXAASettings })
+    fxaa = new FXAASettings(this);
+
+    @property({ type: BloomSettings })
+    bloom = new BloomSettings(this);
+
+    @property({ type: ColorGradingSettings })
+    colorGrading = new ColorGradingSettings(this);
+    
+    @property({ type: ToneMappingSettings })
+    toneMapping = new ToneMappingSettings(this);
+    
+    onPropertyChanged(target: any, property: string, value: any): void {
+        if (EDITOR) {
+            console.log('onPropertyChanged', target, property, value);
+            this._tryEnableEditorPreview();
+        }
+    }
+    
+    onEnable(): void {
+        this.getComponent(Camera)!.camera.pipelineSettings = this;
+        if (EDITOR)
+            this._tryEnableEditorPreview();
+    }
+
+    onDisable(): void {
+        this.getComponent(Camera)!.camera.pipelineSettings = null;
+        if (EDITOR)
+            this._disableEditorPreview();
+    }
+    
+    @property
+    private _editorPreview = false;
+
+    @property
+    get editorPreview(): boolean {
+        return this._editorPreview;
+    }
+    set editorPreview(v: boolean) {
+        this._editorPreview = v;
+        if (EDITOR) {
+            this._tryEnableEditorPreview();
+        }
+    }
+
+    private _tryEnableEditorPreview(): void {
+        if (rendering === undefined)
+            return;
+
+        if (this._editorPreview)
+            rendering.setEditorPipelineSettings(this);
+        else
+            this._disableEditorPreview();
+    }
+
+    private _disableEditorPreview(): void {
+        if (rendering === undefined)
+            return;
+        
+        const current = rendering.getEditorPipelineSettings() as XQPipelineSettings | null;
+        if (current === this)
+            rendering.setEditorPipelineSettings(null);
+    }
+}
