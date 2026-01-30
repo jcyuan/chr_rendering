@@ -91,7 +91,7 @@ export class ShadowPassBuilder extends PipelineBuilderBase {
 
         this._cullLights(cameraInfo.scene, camera.frustum);
         
-        if (cameraInfo.mainLightShadowMapEnabled && this._lights.length > 0)
+        if (cameraInfo.mainLightShadowMapEnabled)
             this._addCascadedShadowMapPass(ppl, cameraInfo, cameraInfo.mainLight, camera);
 
         if (/*cameraInfo.enableSingleForwardPass && */ this._shadowEnabledSpotLights.length > 0)
