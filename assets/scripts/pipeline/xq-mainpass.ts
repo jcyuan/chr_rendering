@@ -1,4 +1,4 @@
-import { gfx, ReflectionProbeManager, renderer, rendering, Vec3, warn } from "cc";
+import { builtinResMgr, gfx, ReflectionProbeManager, renderer, rendering, Texture2D, Vec3, warn } from "cc";
 import { DEBUG, EDITOR } from "cc/env";
 import { PipelineBuilderBase } from "./builder-base";
 import { CameraInfo } from "./camera-info";
@@ -171,9 +171,6 @@ export class MainPassBuilder extends PipelineBuilderBase {
                 case LightType.SPHERE:
                     queue.name = 'sphere-light';
                     break;
-                case LightType.SPOT:
-                    queue.name = 'spot-light';
-                    break;
                 case LightType.POINT:
                     queue.name = 'point-light';
                     break;
@@ -230,9 +227,12 @@ export class MainPassBuilder extends PipelineBuilderBase {
         else
             pass.addDepthStencil(depthStencilName, LoadOp.LOAD, depthStencilStoreOp);
 
-        const shadowPassBuilder = builder.findFirstPassBuilderByOrder(ShadowPassBuilder.RenderOrder) as ShadowPassBuilder;
-        if (cameraInfo.mainLightShadowMapEnabled && shadowPassBuilder.lights.length > 0)
+        if (cameraInfo.mainLightShadowMapEnabled)
             pass.addTexture(cameraInfo.shadowMap, 'cc_shadowMap');
+        else {
+            const whiteTex = builtinResMgr.get('white-texture') as Texture2D;
+            pass.setTexture('cc_shadowMap', whiteTex.getGFXTexture());
+        }
 
         pass.addQueue(QueueHint.NONE)
             .addScene(camera, SceneFlags.OPAQUE | SceneFlags.MASK, mainLight || undefined, camera.scene || undefined);
@@ -335,9 +335,12 @@ export class MainPassBuilder extends PipelineBuilderBase {
         } else
             pass.addDepthStencil(depthStencilName, LoadOp.LOAD, StoreOp.DISCARD);
 
-        const shadowPassBuilder = builder.findFirstPassBuilderByOrder(ShadowPassBuilder.RenderOrder) as ShadowPassBuilder;
-        if (cameraInfo.mainLightShadowMapEnabled && shadowPassBuilder.lights.length > 0)
+        if (cameraInfo.mainLightShadowMapEnabled)
             pass.addTexture(cameraInfo.shadowMap, 'cc_shadowMap');
+        else {
+            const whiteTex = builtinResMgr.get('white-texture') as Texture2D;
+            pass.setTexture('cc_shadowMap', whiteTex.getGFXTexture());
+        }
 
         pass.addQueue(QueueHint.NONE, 'reflect-map')
             .addScene(camera, SceneFlags.OPAQUE | SceneFlags.MASK | SceneFlags.REFLECTION_PROBE, mainLight, scene);
