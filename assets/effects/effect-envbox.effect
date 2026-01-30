@@ -1,0 +1,189 @@
+// env skybox
+CCEffect %{
+  techniques:
+  - name: opaque
+    passes:
+    - vert: smoke-sky-vs:vert
+      frag: smoke-sky-fs:frag
+      properties: &props
+        skyColor: { value: [0.02, 0.02, 0.05, 1.0], linear: true, editor: { type: color, displayName: "Sky Color" } }
+        # sky params
+        skyUVCorrection: { value: 0.5, editor: { slide: true, range: [0.0, 1.0], step: 0.01, displayName: "Sky UV Pole Correction" } }
+        
+        # smoke params
+        smokeTexture: { value: white, editor: { displayName: "Smoke Texture (RGB:Noise, A:Shape)" } }
+        smokeColor: { value: [0.5, 0.55, 0.6, 1.0], linear: true, editor: { type: color, displayName: "Smoke Color" } }
+        shadowColor: { value: [0.2, 0.22, 0.25, 1.0], linear: true, editor: { type: color, displayName: "Smoke Shadow Color" } }
+        smokeLayer1Params: { value: [1.0, 1.0, 0.005, 0.002], editor: { displayName: "Smoke Layer1 (ScaleXY, SpeedXY)" } }
+        smokeLayer2Params: { value: [1.5, 1.5, -0.003, 0.004], editor: { displayName: "Smoke Layer2 (ScaleXY, SpeedXY)" } }
+        smokeNoiseParams: { value: [1.0, 1.0, 0.003, 0.001], editor: { displayName: "Smoke Noise (ScaleXY, SpeedXY)" } }
+        noiseStrength: { value: 0.001, editor: { slide: true, range: [0.0, 0.1], step: 0.0001, displayName: "Smoke Distortion Strength" } }
+        smokeVerticalFade: { value: [0.0, 0.2, 0.8, 1.0], editor: { displayName: "Smoke Vertical Fade (BottomStart,BottomEnd,TopStart,TopEnd)" } }
+        smokePoleFade: { value: [0.7, 0.95], editor: { displayName: "Smoke Pole Fade (Start, End)" } }
+        smokeOpacity: { value: 1.0, editor: { slide: true, range: [0.0, 1.0], step: 0.01, displayName: "Smoke Opacity" } }
+
+        # star params
+        starDataTex: { value: black, editor: { displayName: "Star Data Texture" } }
+        starIndexTex: { value: black, editor: { displayName: "Star Index Texture" } }
+        starColor: { value: [1.0, 1.0, 0.95, 1.0], linear: true, editor: { type: color, displayName: "Star Color" } }
+        starBrightness: { value: 1.0, editor: { slide: true, range: [0.0, 3.0], step: 0.001, displayName: "Star Brightness" } }
+        starSize: { value: 1.0, editor: { slide: true, range: [0.0001, 5.0], step: 0.0001, displayName: "Star Size" } }
+        starFlickerMin: { value: 0.7, editor: { slide: true, range: [0.0, 1.0], step: 0.01, displayName: "Star Flicker Min" } }
+        starVerticalRange: { value: [0.5, 0.6, 0.9, 1.0], editor: { displayName: "Star Vertical Range (BottomStart,BottomEnd,TopStart,TopEnd)" } }
+        
+      rasterizerState:
+        cullMode: front
+      depthStencilState:
+        depthTest: true
+        depthWrite: false
+}%
+
+CCProgram smoke-sky-vs %{
+  precision highp float;
+  #include <builtin/uniforms/cc-global>
+  #include <builtin/uniforms/cc-local>
+
+  in vec3 a_position;
+  in vec2 a_texCoord;
+
+  out vec2 v_uv;
+
+  vec4 vert () {
+    v_uv = a_texCoord;
+    vec4 worldPos = cc_matWorld * vec4(a_position, 1.0);
+    return cc_matProj * cc_matView * worldPos;
+  }
+}%
+
+CCProgram smoke-sky-fs %{
+  precision highp float;
+  #include <builtin/uniforms/cc-global>
+  #include <common/color/gamma>
+  #include <vfx-common>
+
+  in vec2 v_uv;
+
+  uniform sampler2D smokeTexture;
+  uniform sampler2D starDataTex;
+  uniform sampler2D starIndexTex;
+
+  uniform SmokeParams {
+    vec4 skyColor;
+    vec4 smokeColor;
+    vec4 shadowColor;
+    vec4 starColor;
+    vec4 smokeVerticalFade;
+    vec4 smokeLayer1Params;  // xy: scale, zw: speed
+    vec4 smokeLayer2Params;  // xy: scale, zw: speed
+    vec4 starVerticalRange;
+    vec4 smokeNoiseParams;  // xy: scale, zw: speed
+    vec2 smokePoleFade;  // x: start, y: end
+    float starSize;
+    float starFlickerMin;
+    float skyUVCorrection;
+    float noiseStrength;
+    float starBrightness;
+    float smokeOpacity;
+  };
+
+  struct StarData {
+    vec2 pos;
+    float radius;
+    float phase;
+  };
+
+  StarData decodeStar(float index) {
+    vec4 data = texture(starDataTex, vec2(index, 0.5));
+    StarData s;
+    s.pos = (data.rg - 0.5) * vec2(1.8, 1.1);
+    s.radius = data.b * 0.5;
+    s.phase = data.a;
+    return s;
+  }
+
+  float starGlow(vec2 uv, StarData s, float time, float size, float flickerMin) {
+    float flickerWave = sin(time * 0.1 * s.phase * 500.0) * 0.5 + 0.5;
+    float flicker = mix(flickerMin, 1.0, flickerWave);
+    float b = s.radius * size * flicker;
+    float dist = length(uv - s.pos);
+    return smoothstep(0.0, 1000.0, b / pow(max(1e-12, dist), 1.0));
+  }
+
+  float sampleStarField(vec2 uv, float time, float size, float flickerMin) {
+    vec2 indexUV = uv / vec2(1.8, 1.1) * 0.5 + 0.5;
+    indexUV = clamp(indexUV, 0.0, 1.0);
+    vec4 indices = texture(starIndexTex, indexUV);
+    
+    float glow = 0.0;
+    glow += starGlow(uv, decodeStar(indices.r), time, size, flickerMin);
+    glow += starGlow(uv, decodeStar(indices.g), time, size, flickerMin);
+    glow += starGlow(uv, decodeStar(indices.b), time, size, flickerMin);
+    glow += starGlow(uv, decodeStar(indices.a), time, size, flickerMin);
+    
+    return glow;
+  }
+
+  vec4 sampleTexture(sampler2D tex, vec2 uv) {
+    vec4 result = texture(tex, fract(uv));
+    result.rgb = SRGBToLinear(result.rgb);
+    return result;
+  }
+
+  vec4 frag () {
+    float time = cc_time.x;
+    vec2 uv = v_uv;
+
+    // stars
+    float starY = 1.0 - uv.y;
+    float correctedY = starY;
+    if (skyUVCorrection > 0.0) {
+      float angle = (starY - 0.5) * 3.14159;
+      float linearY = sin(angle) * 0.5 + 0.5;
+      correctedY = mix(starY, linearY, skyUVCorrection);
+    }
+    
+    float bottomFadeStar = smoothstep(starVerticalRange.x, starVerticalRange.y, correctedY);
+    float topFadeStar = smoothstep(starVerticalRange.w, starVerticalRange.z, correctedY);
+    float starMask = bottomFadeStar * topFadeStar;
+    
+    vec2 starUV = vec2(
+      (uv.x - 0.5) * 1.8,  // [-0.9, 0.9]
+      (correctedY - 0.5) * 1.1  // [-0.55, 0.55]
+    );
+    
+    float starGlowValue = 0.0;
+    if (starMask > 0.001) {
+      float rawGlow = sampleStarField(starUV, time, starSize, starFlickerMin);
+      starGlowValue = rawGlow * starMask * starBrightness;
+    }
+    
+    // smokes
+    vec2 smokeBaseUV = uv;    
+    vec2 noiseUV = applyUVPannerRotate(smokeBaseUV, smokeNoiseParams.zw, 0.0, smokeNoiseParams.xy, time);
+    vec2 noiseRG = sampleTexture(smokeTexture, noiseUV).rg * 2.0 - 1.0;
+    
+    vec2 distortedUV = smokeBaseUV + noiseRG * noiseStrength;
+    
+    vec2 uv1 = applyUVPannerRotate(distortedUV, smokeLayer1Params.zw, 0.0, smokeLayer1Params.xy, time);
+    float a1 = sampleTexture(smokeTexture, uv1).a;
+    
+    vec2 uv2 = applyUVPannerRotate(distortedUV, smokeLayer2Params.zw, 0.0, smokeLayer2Params.xy, time);
+    float a2 = sampleTexture(smokeTexture, uv2).a;
+    
+    float smokeAlpha = a1 * a2;
+    vec3 color = mix(shadowColor.rgb, smokeColor.rgb, smokeAlpha);
+    
+    float smokeY = 1.0 - v_uv.y;
+    float bottomFade = smoothstep(smokeVerticalFade.x, smokeVerticalFade.y, smokeY);
+    float topFade = smoothstep(smokeVerticalFade.w, smokeVerticalFade.z, smokeY);
+    float vertFade = bottomFade * topFade;
+    
+    float poleFade = 1.0 - smoothstep(smokePoleFade.x, smokePoleFade.y, smokeY);
+    float alpha = smokeAlpha * vertFade * poleFade * smokeOpacity;
+    
+    vec3 skyWithStars = skyColor.rgb + starColor.rgb * starGlowValue;
+    vec3 finalColor = mix(skyWithStars, color, alpha);
+    
+    return vec4(finalColor, 1.0);
+  }
+}%

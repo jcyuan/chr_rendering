@@ -1,0 +1,94 @@
+{
+  "__type__": "cc.Material",
+  "_name": "",
+  "_objFlags": 0,
+  "__editorExtras__": {},
+  "_native": "",
+  "_effectAsset": {
+    "__uuid__": "c0aa8b56-80bc-4922-bffd-b2d793c72f79",
+    "__expectedType__": "cc.EffectAsset"
+  },
+  "_techIdx": 0,
+  "_defines": [
+    {}
+  ],
+  "_states": [
+    {
+      "rasterizerState": {},
+      "depthStencilState": {},
+      "blendState": {
+        "targets": [
+          {}
+        ]
+      }
+    }
+  ],
+  "_props": [
+    {
+      "skyColor": {
+        "__type__": "cc.Color",
+        "r": 9,
+        "g": 9,
+        "b": 12,
+        "a": 255
+      },
+      "smokeTexture": {
+        "__uuid__": "c0ca3161-c7be-4a11-857c-ec9653c5cc46@6c48a",
+        "__expectedType__": "cc.Texture2D"
+      },
+      "smokeLayer1Params": {
+        "__type__": "cc.Vec4",
+        "x": 0.4,
+        "y": 0.6,
+        "z": 0.005,
+        "w": 0.002
+      },
+      "smokeLayer2Params": {
+        "__type__": "cc.Vec4",
+        "x": 0.6,
+        "y": 0.8,
+        "z": -0.003,
+        "w": 0.004
+      },
+      "smokeNoiseParams": {
+        "__type__": "cc.Vec4",
+        "x": 0.2,
+        "y": 0.4,
+        "z": 0.003,
+        "w": 0.001
+      },
+      "noiseStrength": 0.004,
+      "smokeVerticalFade": {
+        "__type__": "cc.Vec4",
+        "x": 0.45,
+        "y": 0.6,
+        "z": 0.8,
+        "w": 1
+      },
+      "smokeOpacity": 0.2,
+      "starDataTex": {
+        "__uuid__": "9f8c3f52-bca4-48c4-b02d-83e51cedd478@6c48a",
+        "__expectedType__": "cc.Texture2D"
+      },
+      "starIndexTex": {
+        "__uuid__": "e7e3db3f-8b56-4e6e-b316-2f7bfd3f0896@6c48a",
+        "__expectedType__": "cc.Texture2D"
+      },
+      "starColor": {
+        "__type__": "cc.Color",
+        "r": 255,
+        "g": 255,
+        "b": 213,
+        "a": 255
+      },
+      "starSize": 1.5,
+      "starVerticalRange": {
+        "__type__": "cc.Vec4",
+        "x": 0.55,
+        "y": 0.6,
+        "z": 0.99,
+        "w": 1
+      }
+    }
+  ]
+}

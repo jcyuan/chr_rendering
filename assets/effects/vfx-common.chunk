@@ -1,0 +1,24 @@
+#pragma once
+
+vec2 rotateUV(vec2 uv, float angle) {
+  float s = sin(angle);
+  float c = cos(angle);
+  vec2 center = vec2(0.5);
+  uv -= center;
+  uv = vec2(uv.x * c - uv.y * s, uv.x * s + uv.y * c);
+  uv += center;
+  return uv;
+}
+
+vec2 applyUVPannerRotate(vec2 uv, vec2 pannerSpeed, float rotateSpeed, vec2 scale, float time, float reverse) {
+  vec2 result = uv / scale;
+  result += pannerSpeed * time * reverse;
+  if (rotateSpeed != 0.0) {
+    result = rotateUV(result, rotateSpeed * time * reverse);
+  }
+  return result;
+}
+
+vec2 applyUVPannerRotate(vec2 uv, vec2 pannerSpeed, float rotateSpeed, vec2 scale, float time) {
+  return applyUVPannerRotate(uv, pannerSpeed, rotateSpeed, scale, time, 1.0);
+}
