@@ -28,7 +28,6 @@ export class UIPassBuilder extends PipelineBuilderBase {
             return undefined;
         }
         
-        // TODO: CC bug: Profiler will be drawn twice in DEBUG mode, waiting for official fix
         const queue = prevRenderPass.addQueue(rendering.QueueHint.BLEND);
         queue.addDraw2D(camera);
         if (cameraInfo.isProfilerLayerCamera(builder.profileCamera)) {
