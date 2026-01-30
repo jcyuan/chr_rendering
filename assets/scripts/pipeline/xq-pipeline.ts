@@ -1,4 +1,4 @@
-import { _decorator, builtinResMgr, director, gfx, Layers, Material, PipelineEventType, renderer, rendering } from 'cc';
+import { _decorator, builtinResMgr, director, gfx, Layers, PipelineEventType, renderer, rendering } from 'cc';
 import { CameraInfo } from "./camera-info";
 import { RenderingContext } from "./rendering-context";
 import { MainPassBuilder } from './xq-mainpass';
@@ -139,11 +139,12 @@ export class XQPipeline implements rendering.PipelineBuilder {
         else
             pass.addDepthStencil(info.windowDepthStencil, gfx.LoadOp.LOAD, gfx.StoreOp.DISCARD);
         
-        pass.addQueue(rendering.QueueHint.OPAQUE).addScene(camera, rendering.SceneFlags.OPAQUE);
-        pass.addQueue(rendering.QueueHint.BLEND).addDraw2D(camera);
+        const queue = pass.addQueue(rendering.QueueHint.OPAQUE);
+        queue.addScene(camera, rendering.SceneFlags.OPAQUE | rendering.SceneFlags.BLEND | rendering.SceneFlags.MASK | rendering.SceneFlags.GEOMETRY);
+        queue.addDraw2D(camera);
         if (info.isProfilerLayerCamera(this._profileCamera)) {
             pass.showStatistics = true;
-            pass.addQueue(rendering.QueueHint.BLEND).addProfiler(camera);
+            queue.addProfiler(camera);
         }
     }
 }
