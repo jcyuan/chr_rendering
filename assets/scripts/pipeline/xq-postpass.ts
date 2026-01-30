@@ -1,4 +1,4 @@
-import { assert, builtinResMgr, director, gfx, Material, renderer, rendering, Vec2 } from "cc";
+import { assert, builtinResMgr, gfx, Material, renderer, rendering, Vec2 } from "cc";
 import { PipelineBuilderBase } from "./builder-base";
 import { CameraInfo } from "./camera-info";
 import { RenderingContext } from "./rendering-context";

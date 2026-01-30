@@ -157,7 +157,7 @@ export class CameraInfo extends WindowInfo {
         return `msaaDepthStencil${this.id}`;
     }
     
-    get mainLight() {
+    get mainLight(): renderer.scene.DirectionalLight | null {
         return this._camera.scene?.mainLight ?? null;
     }
     
