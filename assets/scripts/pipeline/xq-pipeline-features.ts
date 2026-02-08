@@ -17,8 +17,7 @@ export class XQPipelineFeatures {
     private _screenSpaceSignY: number = 1;
     private _supportDepthSample: boolean = false;
     private _platform: { x: number; w: number } = { x: 0, w: 0 };
-    private _SSSSEnabled: boolean = false;
-    private _mobileMaxSpotLightShadowMaps: number = 1;
+    private _mobileMaxSpotLightShadowMaps: number = 2;
 
     reset(pipeline: rendering.BasicPipeline) {
         const sampleFeature = gfx.FormatFeatureBit.SAMPLED_TEXTURE | gfx.FormatFeatureBit.LINEAR_FILTER;
@@ -33,8 +32,6 @@ export class XQPipelineFeatures {
         this._isHDR = pipeline.pipelineSceneData.isHDR;
         this._useFloatOutput = pipeline.getMacroBool('CC_USE_FLOAT_OUTPUT');
         this._toneMappingType = pipeline.pipelineSceneData.postSettings.toneMappingType;
-
-        this._SSSSEnabled = pipeline.pipelineSceneData.skin.enabled;
 
         this._csmSupported = pipeline.pipelineSceneData.csmSupported;
 
@@ -85,10 +82,6 @@ export class XQPipelineFeatures {
 
     get toneMappingType(): number {
         return this._toneMappingType;
-    }
-
-    get SSSSEnabled(): boolean {
-        return this._SSSSEnabled;
     }
     
     get shadowEnabled(): boolean {

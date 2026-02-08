@@ -1,0 +1,3 @@
+// temp fix for bug: https://github.com/cocos/cocos4/issues/72
+#undef CC_IS_TRANSPARENCY_PASS
+#define CC_IS_TRANSPARENCY_PASS 0

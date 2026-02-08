@@ -123,12 +123,6 @@ CCProgram smoke-sky-fs %{
     return glow;
   }
 
-  vec4 sampleTexture(sampler2D tex, vec2 uv) {
-    vec4 result = texture(tex, fract(uv));
-    result.rgb = SRGBToLinear(result.rgb);
-    return result;
-  }
-
   vec4 frag () {
     float time = cc_time.x;
     vec2 uv = v_uv;
@@ -160,15 +154,15 @@ CCProgram smoke-sky-fs %{
     // smokes
     vec2 smokeBaseUV = uv;    
     vec2 noiseUV = applyUVPannerRotate(smokeBaseUV, smokeNoiseParams.zw, 0.0, smokeNoiseParams.xy, time);
-    vec2 noiseRG = sampleTexture(smokeTexture, noiseUV).rg * 2.0 - 1.0;
+    vec2 noiseRG = texture(smokeTexture, noiseUV).rg * 2.0 - 1.0;
     
     vec2 distortedUV = smokeBaseUV + noiseRG * noiseStrength;
     
     vec2 uv1 = applyUVPannerRotate(distortedUV, smokeLayer1Params.zw, 0.0, smokeLayer1Params.xy, time);
-    float a1 = sampleTexture(smokeTexture, uv1).a;
+    float a1 = texture(smokeTexture, uv1).a;
     
     vec2 uv2 = applyUVPannerRotate(distortedUV, smokeLayer2Params.zw, 0.0, smokeLayer2Params.xy, time);
-    float a2 = sampleTexture(smokeTexture, uv2).a;
+    float a2 = texture(smokeTexture, uv2).a;
     
     float smokeAlpha = a1 * a2;
     vec3 color = mix(shadowColor.rgb, smokeColor.rgb, smokeAlpha);

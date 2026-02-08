@@ -1,5 +1,4 @@
-import { gfx, Layers, renderer, Vec3 } from "cc";
-import { DEBUG, EDITOR, EDITOR_NOT_IN_PREVIEW } from "cc/env";
+import { gfx, renderer, Vec3 } from "cc";
 import { cameraUtils } from "./utils";
 import { WindowInfo } from "./windowInfo";
 import { XQPipeline } from "./xq-pipeline";
@@ -10,11 +9,11 @@ export class CameraInfo extends WindowInfo {
     private _radianceFormat: gfx.Format;
     private _HDREnabled: boolean;
     private _SSSSEnabled: boolean = false;
+    private _needOffscreenDepth: boolean = false;
     private _shadowMapFormat: gfx.Format = gfx.Format.RGBA8;
     private _mainLightShadowMapEnabled: boolean = false;
     private _mainLightPlanarShadowMapEnabled: boolean = false;
     private _planarReflectionProbeEnabled: boolean = false;
-    private _MSAAEnabled: boolean = false;
     
     private _isMainGameWindow: boolean = false;
     private _isGameView: boolean = false;
@@ -37,7 +36,8 @@ export class CameraInfo extends WindowInfo {
         this._HDREnabled = features.isHDR;
         this._radianceFormat = this._HDREnabled ? gfx.Format.RGBA16F : gfx.Format.RGBA8;
 
-        this._SSSSEnabled = features.SSSSEnabled;
+        this._SSSSEnabled = settings.skin?.enabled ?? false;
+        this._needOffscreenDepth = this._SSSSEnabled; // || settings.somePostEfxNeedDepthTexture?.enabled;
         
         this._shadowMapFormat = features.shadowMapFormat;
         
@@ -61,8 +61,6 @@ export class CameraInfo extends WindowInfo {
         this._planarReflectionProbeEnabled = this._isMainGameWindow
             || camera.cameraUsage === renderer.scene.CameraUsage.SCENE_VIEW
             || camera.cameraUsage === renderer.scene.CameraUsage.GAME_VIEW;
-
-        this._MSAAEnabled = settings.msaa.enabled && !features.isWebGL1;
     }
 
     get camera(): renderer.scene.Camera {
@@ -85,20 +83,8 @@ export class CameraInfo extends WindowInfo {
         return `depthStencil${this.id}`;
     };
 
-    get scaledRadianceColor(): string {
-        return `scaledRadiance${this.id}`;
-    };
-
-    get scaledDepthStencil(): string {
-        return `scaledDepthStencil${this.id}`;
-    };
-    
-    get sssColor(): string {
-        return `sssColor${this.id}`;
-    }
-
-    get sssDepthStencil(): string {
-        return `sssDepthStencil${this.id}`;
+    get sceneDepthPacked(): string {
+        return `sceneDepthPacked${this.id}`;
     }
 
     get radianceFormat() {
@@ -128,6 +114,10 @@ export class CameraInfo extends WindowInfo {
     get shadowDepth(): string {
         return `shadowDepth${this.id}`;
     }
+
+    getTextureName(name: string) {
+        return `${name}${this.id}`;
+    }
     
     get shadowMapFormat() {
         return this._shadowMapFormat;
@@ -145,28 +135,28 @@ export class CameraInfo extends WindowInfo {
         return this._SSSSEnabled;
     }
 
-    get MSAAEnabled(): boolean {
-        return this._MSAAEnabled;
+    get needOffscreenDepth(): boolean {
+        return this._needOffscreenDepth;
     }
 
-    get msaaRadiance(): string {
-        return `msaaRadiance${this.id}`;
-    }
-
-    get msaaDepthStencil(): string {
-        return `msaaDepthStencil${this.id}`;
+    get mainLight(): renderer.scene.DirectionalLight | undefined {
+        return this._camera.scene?.mainLight ?? undefined;
     }
     
-    get mainLight(): renderer.scene.DirectionalLight | null {
-        return this._camera.scene?.mainLight ?? null;
-    }
-    
-    get scene(): renderer.RenderScene | null {
-        return this._camera.scene;
+    get scene(): renderer.RenderScene | undefined {
+        return this._camera.scene ?? undefined;
     }
     
     get needClearColor() {
         return !!(this._camera.clearFlag & (gfx.ClearFlagBit.COLOR | (gfx.ClearFlagBit.STENCIL << 1)));
+    }
+
+    get needDepth() {
+        return !!(this._camera.clearFlag & gfx.ClearFlagBit.DEPTH);
+    }
+
+    get needStencil() {
+        return !!(this._camera.clearFlag & gfx.ClearFlagBit.STENCIL);
     }
 
     get needDepthStencil() {
@@ -190,22 +180,28 @@ export class CameraInfo extends WindowInfo {
         return null;
     }
 
-    fillViewport(out: gfx.Viewport) {
+    fillViewport(out: gfx.Viewport, scale: number = 1) {
         const src = this._camera.viewport;
-        out.left = Math.round(src.x * this.width);
-        out.top = Math.round(src.y * this.height);
-        out.width = Math.max(Math.round(src.width * this.width), 1);
-        out.height = Math.max(Math.round(src.height * this.height), 1);
+        out.left = Math.round(src.x * this.width * scale);
+        out.top = Math.round(src.y * this.height * scale);
+        out.width = Math.max(Math.round(src.width * this.width * scale), 1);
+        out.height = Math.max(Math.round(src.height * this.height * scale), 1);
 
         return out;
     }
     
-    fillClearColor(out: gfx.Color | Vec3) {
+    fillClearColor<T extends gfx.Color | Vec3>(out: T, outputLinear?: boolean): T {
         const clearColor = this._camera.clearColor;
 
         out.x = clearColor.x;
         out.y = clearColor.y;
         out.z = clearColor.z;
+
+        if (outputLinear === true) {
+            out.x = out.x * out.x;
+            out.y = out.y * out.y;
+            out.z = out.z * out.z;
+        }
 
         if (out instanceof gfx.Color)
             out.w = clearColor.w;

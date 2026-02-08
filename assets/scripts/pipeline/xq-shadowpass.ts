@@ -4,6 +4,7 @@ import { CameraInfo } from "./camera-info";
 import { RenderingContext } from "./rendering-context";
 import { XQPipeline } from "./xq-pipeline";
 import { XQPipelineFeatures } from "./xq-pipeline-features";
+import { clearColorUtils } from "./utils";
 
 const { AABB, Sphere, intersect } = geometry;
 const { LoadOp, StoreOp } = gfx;
@@ -12,8 +13,6 @@ export class ShadowPassBuilder extends PipelineBuilderBase {
     public static readonly RenderOrder = 200;
 
     private _viewport = new gfx.Viewport();
-    private _whiteClearColor = new gfx.Color(1, 1, 1, 1);
-
     private _platform = new Vec4(0, 0, 0, 0);
     
     private readonly _lights: renderer.scene.Light[] = [];
@@ -57,23 +56,21 @@ export class ShadowPassBuilder extends PipelineBuilderBase {
         );
         
         // spot lights
-        // if (cameraInfo.enableSingleForwardPass) {
-            const count = builder.features.mobileMaxSpotLightShadowMaps;
-            for (let i = 0; i !== count; ++i) {
-                ppl.addRenderTarget(
-                    `spotShadowMap${i}`,
-                    builder.features.shadowMapFormat,
-                    builder.features.shadowMapSize.x,
-                    builder.features.shadowMapSize.y,
-                );
-                ppl.addDepthStencil(
-                    `spotShadowDepth${i}`,
-                    gfx.Format.DEPTH_STENCIL,
-                    builder.features.shadowMapSize.x,
-                    builder.features.shadowMapSize.y,
-                );
-            }
-        // }
+        const count = builder.features.mobileMaxSpotLightShadowMaps;
+        for (let i = 0; i !== count; ++i) {
+            ppl.addRenderTarget(
+                `spotShadowMap${i}`,
+                builder.features.shadowMapFormat,
+                builder.features.shadowMapSize.x,
+                builder.features.shadowMapSize.y,
+            );
+            ppl.addDepthStencil(
+                `spotShadowDepth${i}`,
+                gfx.Format.DEPTH_STENCIL,
+                builder.features.shadowMapSize.x,
+                builder.features.shadowMapSize.y,
+            );
+        }
     }
 
     public setup(
@@ -94,7 +91,7 @@ export class ShadowPassBuilder extends PipelineBuilderBase {
         if (cameraInfo.mainLightShadowMapEnabled)
             this._addCascadedShadowMapPass(ppl, cameraInfo, cameraInfo.mainLight, camera);
 
-        if (/*cameraInfo.enableSingleForwardPass && */ this._shadowEnabledSpotLights.length > 0)
+        if (this._shadowEnabledSpotLights.length > 0)
             this._addSpotlightShadowPasses(ppl, builder.features, camera, builder.features.mobileMaxSpotLightShadowMaps);
         
         return prevRenderPass;
@@ -125,7 +122,7 @@ export class ShadowPassBuilder extends PipelineBuilderBase {
 
         const pass = ppl.addRenderPass(width, height, 'default');
         pass.name = 'cascadedShadowMap';
-        pass.addRenderTarget(cameraInfo.shadowMap, gfx.LoadOp.CLEAR, gfx.StoreOp.STORE, this._whiteClearColor);
+        pass.addRenderTarget(cameraInfo.shadowMap, gfx.LoadOp.CLEAR, gfx.StoreOp.STORE, clearColorUtils.white);
         pass.addDepthStencil(cameraInfo.shadowDepth, gfx.LoadOp.CLEAR, gfx.StoreOp.DISCARD);
 
         const csmLevel = this._pipeline.features?.csmSupported ? light.csmLevel : 1;
@@ -242,7 +239,7 @@ export class ShadowPassBuilder extends PipelineBuilderBase {
             const shadowMapSize = features.shadowMapSize;
             const shadowPass = ppl.addRenderPass(shadowMapSize.x, shadowMapSize.y, 'default');
             shadowPass.name = `spotLightShadowPass${i}`;
-            shadowPass.addRenderTarget(`spotShadowMap${i}`, LoadOp.CLEAR, StoreOp.STORE, this._whiteClearColor);
+            shadowPass.addRenderTarget(`spotShadowMap${i}`, LoadOp.CLEAR, StoreOp.STORE, clearColorUtils.white);
             shadowPass.addDepthStencil(`spotShadowDepth${i}`, LoadOp.CLEAR, StoreOp.DISCARD);
             shadowPass.addQueue(rendering.QueueHint.NONE, 'shadow-caster')
                 .addScene(camera, rendering.SceneFlags.OPAQUE | rendering.SceneFlags.MASK | rendering.SceneFlags.SHADOW_CASTER)

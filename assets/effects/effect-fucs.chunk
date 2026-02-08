@@ -1,0 +1,39 @@
+#pragma once
+
+// pack depth into two float16 channels with ~18-bit effective precision
+// hi = quantized to 1/256 steps (exact in float16), lo = remainder scaled to [0, 1)
+// depth: [0, 1]
+vec2 packDepth(float depth) {
+    float hi = floor(depth * 256.0) / 256.0;
+    float lo = (depth - hi) * 256.0;
+    return vec2(hi, lo);
+}
+
+// unpack depth from two float16 channels (return 0-1)
+float unpackDepth(vec2 rg) {
+    return rg.x + rg.y / 256.0;
+}
+
+// pack profile + scatter into 12-bit value (stored in float, safe for float16)
+// layout: [profile: high 3 bits (0~7)] [scatter: low 9 bits (0~511)]
+// profile 0 = no SSS, 1~7 = profile index
+float packSkinInfo(float profile, float scatter) {
+    float p = floor(clamp(profile, 0.0, 7.0) + 0.5);
+    float s = floor(clamp(scatter, 0.0, 1.0) * 511.0 + 0.5);
+    return (p * 512.0 + s) / 4095.0;
+}
+
+// out profile: [0, 7]  (0 = no SSS, 1~7 = profile index)
+// out scatter: [0, 1]  (9-bit precision, 512 levels)
+void unpackSkinInfo(float packedInfo, out float profile, out float scatter) {
+    float val12 = floor(packedInfo * 4095.0 + 0.5);
+    profile = floor(val12 / 512.0);          // high 3 bits
+    scatter = (val12 - profile * 512.0) / 511.0; // low 9 bits
+}
+
+// get screen UV with NDC flip
+vec2 getScreenUV() {
+    vec2 uv = gl_FragCoord.xy * cc_screenSize.zw;
+    CC_HANDLE_NDC_SAMPLE_FLIP(uv, cc_cameraPos.w);
+    return uv;
+}

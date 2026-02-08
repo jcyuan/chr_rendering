@@ -5,12 +5,15 @@
   "__editorExtras__": {},
   "_native": "",
   "_effectAsset": {
-    "__uuid__": "c8f66d17-351a-48da-a12c-0212d28575c4",
+    "__uuid__": "12e9ff60-02b2-4af9-bc6c-a6f843010e79",
     "__expectedType__": "cc.EffectAsset"
   },
   "_techIdx": 0,
   "_defines": [
-    {},
+    {
+      "USE_DUAL_LOBE_SPECULAR": true,
+      "USE_PBR_MAP": true
+    },
     {},
     {},
     {},
@@ -75,9 +78,17 @@
   ],
   "_props": [
     {
-      "roughness": 1,
-      "metallic": 0.001,
-      "specularIntensity": 1
+      "albedoScale": {
+        "__type__": "cc.Vec3",
+        "x": 0.992,
+        "y": 0.839,
+        "z": 0.686
+      },
+      "occlusion": 1,
+      "roughness": 0.7,
+      "specularIntensity": 0.4,
+      "scatteringFactor": 0.8,
+      "thicknessFactor": 0.6
     },
     {},
     {},

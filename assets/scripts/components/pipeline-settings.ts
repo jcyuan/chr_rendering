@@ -1,14 +1,14 @@
-import { _decorator, Camera, CCBoolean, Component, rendering } from 'cc';
+import { _decorator, Camera, Component, rendering } from 'cc';
 import { EDITOR } from 'cc/env';
-import { BloomSettings, ColorGradingSettings, FSRSettings, FXAASettings, MSAASettings, ToneMappingSettings, PropertyNotifier } from '../pipeline/pass-settings';
-import { PipelineSettings } from '../pipeline/xq-pipeline-types';
+import { BloomSettings, ColorGradingSettings, FSRSettings, FXAASettings, IPropertyNotifier, SkinSettings, ToneMappingSettings } from '../pipeline/pass-settings';
+import { IPipelineSettings } from '../pipeline/xq-pipeline-types';
 const { ccclass, property, executeInEditMode, disallowMultiple, requireComponent } = _decorator;
 
 @ccclass('XQPipelineSettings')
 @executeInEditMode
 @disallowMultiple
 @requireComponent(Camera)
-export class XQPipelineSettings extends Component implements PipelineSettings, PropertyNotifier {
+export class XQPipelineSettings extends Component implements IPipelineSettings, IPropertyNotifier {
     private static _defaultSettings: XQPipelineSettings;
     static get defaultSettings(): XQPipelineSettings {
         if (!this._defaultSettings)
@@ -40,9 +40,6 @@ export class XQPipelineSettings extends Component implements PipelineSettings, P
             this._tryEnableEditorPreview();
         }
     }
-    
-    @property({ type: MSAASettings })
-    msaa = new MSAASettings(this);
 
     @property({ type: FSRSettings })
     fsr = new FSRSettings(this);
@@ -58,6 +55,9 @@ export class XQPipelineSettings extends Component implements PipelineSettings, P
     
     @property({ type: ToneMappingSettings })
     toneMapping = new ToneMappingSettings(this);
+
+    @property({ type: SkinSettings })
+    skin = new SkinSettings(this);
     
     onPropertyChanged(target: any, property: string, value: any): void {
         if (EDITOR) {

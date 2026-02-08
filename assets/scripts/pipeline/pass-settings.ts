@@ -1,9 +1,7 @@
-import { Enum, gfx, Material, Texture2D } from "cc";
-import { _decorator } from "cc";
+import { _decorator, Enum, Material, Texture2D } from "cc";
+import { ISkinSettings } from "./xq-pipeline-types";
 
 const { ccclass, property } = _decorator;
-
-const SampleCountEnum = Enum(gfx.SampleCount);
 
 export enum BloomType {
     KawaseDualFilter,
@@ -11,41 +9,13 @@ export enum BloomType {
 }
 const BloomTypeEnum = Enum(BloomType);
 
-export interface PropertyNotifier {
+export interface IPropertyNotifier {
     onPropertyChanged(target: any, property: string, value: any): void;
-}
-
-@ccclass('MSAASettings')
-export class MSAASettings implements MSAASettings {
-    constructor(private _proxy: PropertyNotifier) {
-    }
-
-    @property
-    private _enabled = false;
-    @property
-    get enabled() {
-        return this._enabled;
-    }
-    set enabled(v: boolean) {
-        this._enabled = v;
-        this._proxy?.onPropertyChanged(this, 'enabled', v);
-    }
-
-    @property({ type: SampleCountEnum })
-    private _sampleCount = gfx.SampleCount.X4;
-    @property({ type: SampleCountEnum })
-    get sampleCount() {
-        return this._sampleCount;
-    }
-    set sampleCount(v: gfx.SampleCount) {
-        this._sampleCount = v;
-        this._proxy?.onPropertyChanged(this, 'sampleCount', v);
-    }
 }
 
 @ccclass('BloomSettings')
 export class BloomSettings implements BloomSettings {
-    constructor(private _proxy: PropertyNotifier) {
+    constructor(private _proxy: IPropertyNotifier) {
     }
 
     @property
@@ -150,7 +120,7 @@ export class BloomSettings implements BloomSettings {
 
 @ccclass('ColorGradingSettings')
 export class ColorGradingSettings implements ColorGradingSettings {
-    constructor(private _proxy: PropertyNotifier) {
+    constructor(private _proxy: IPropertyNotifier) {
     }
 
     @property
@@ -200,7 +170,7 @@ export class ColorGradingSettings implements ColorGradingSettings {
 
 @ccclass('FSRSettings')
 export class FSRSettings implements FSRSettings {
-    constructor(private _proxy: PropertyNotifier) {
+    constructor(private _proxy: IPropertyNotifier) {
     }
 
     @property
@@ -239,7 +209,7 @@ export class FSRSettings implements FSRSettings {
 
 @ccclass('FXAASettings')
 export class FXAASettings implements FXAASettings {
-    constructor(private _proxy: PropertyNotifier) {
+    constructor(private _proxy: IPropertyNotifier) {
     }
     
     @property
@@ -267,7 +237,7 @@ export class FXAASettings implements FXAASettings {
 
 @ccclass('ToneMappingSettings')
 export class ToneMappingSettings implements ToneMappingSettings {
-    constructor(private _proxy: PropertyNotifier) {
+    constructor(private _proxy: IPropertyNotifier) {
     }
 
     @property({ type: Material, tooltip: 'Custom tone mapping material. If not set, uses built-in utilMtl.' })
@@ -279,5 +249,51 @@ export class ToneMappingSettings implements ToneMappingSettings {
     set material(v: Material | null) {
         this._material = v;
         this._proxy?.onPropertyChanged(this, 'material', v);
+    }
+}
+
+export enum SSSQuality {
+    Low = 0,
+    Medium = 1,
+    High = 2
+}
+const SSSQualityEnum = Enum(SSSQuality);
+
+@ccclass('SkinSettings')
+export class SkinSettings implements ISkinSettings {
+    constructor(private _proxy: IPropertyNotifier) {
+    }
+
+    @property
+    private _enabled = false;
+    @property
+    get enabled() {
+        return this._enabled;
+    }
+    set enabled(v: boolean) {
+        this._enabled = v;
+        this._proxy?.onPropertyChanged(this, 'enabled', v);
+    }
+
+    @property({ type: SSSQualityEnum })
+    private _sssQuality: SSSQuality = SSSQuality.High;
+    @property({ type: SSSQualityEnum, tooltip: 'SSS blur quality' })
+    get sssQuality() {
+        return this._sssQuality;
+    }
+    set sssQuality(v: SSSQuality) {
+        this._sssQuality = v;
+        this._proxy?.onPropertyChanged(this, 'sssQuality', v);
+    }
+
+    @property({ type: Texture2D })
+    private _sssLutTexture: Texture2D | null = null;
+    @property({ type: Texture2D, tooltip: 'SSS LUT texture' })
+    get sssLutTexture() {
+        return this._sssLutTexture;
+    }
+    set sssLutTexture(v: Texture2D | null) {
+        this._sssLutTexture = v;
+        this._proxy?.onPropertyChanged(this, 'sssLutTexture', v);
     }
 }

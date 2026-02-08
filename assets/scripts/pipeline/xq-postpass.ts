@@ -9,7 +9,7 @@ const { Color, LoadOp, StoreOp } = gfx;
 const { QueueHint } = rendering;
 
 export class PostProcessPassBuilder extends PipelineBuilderBase {
-    public static readonly RenderOrder = 400;
+    public static readonly RenderOrder = 500;
     
     private readonly _colorGradingTexSize = new Vec2(0, 0);
     private readonly _clearColor = new Color(0, 0, 0, 0);
@@ -50,7 +50,6 @@ export class PostProcessPassBuilder extends PipelineBuilderBase {
             return this._tonemapPass(
                 ppl,
                 builder.settings,
-                cameraInfo,
                 outputWidth,
                 outputHeight,
                 inputColorName,
@@ -58,25 +57,24 @@ export class PostProcessPassBuilder extends PipelineBuilderBase {
                 colorGradingEnabled
             );
         } else
-            return this._copyToScreenPass(ppl, cameraInfo, outputWidth, outputHeight, inputColorName, outputColorName);
+            return this._copyToScreenPass(ppl, outputWidth, outputHeight, inputColorName, outputColorName);
     }
 
     private _copyToScreenPass(
         ppl: rendering.BasicPipeline,
-        cameraInfo: CameraInfo,
         width: number,
         height: number,
         inputColorName: string,
         outputColorName: string
     ): rendering.BasicRenderPassBuilder {
-        const pass = ppl.addRenderPass(width, height, 'pipeline-util');
+        const pass = ppl.addRenderPass(width, height, 'screen-blit');
         pass.name = 'copyToScreen';
-        pass.addRenderTarget(outputColorName, LoadOp.CLEAR, StoreOp.STORE, this._clearColor);
+        pass.addRenderTarget(outputColorName, LoadOp.DISCARD, StoreOp.STORE);
         pass.addTexture(inputColorName, 'inputTexture');
 
-        const utilMat = builtinResMgr.get('utilMtl') as Material | undefined;
+        const utilMat = builtinResMgr.get<Material>('utilMtl');
         if (utilMat)
-            pass.addQueue(QueueHint.OPAQUE).addFullscreenQuad(utilMat, 1);
+            pass.addQueue(QueueHint.NONE).addFullscreenQuad(utilMat, 1);
         else
             console.warn('utilMtl is not found, copy to screen failed');
 
@@ -86,7 +84,6 @@ export class PostProcessPassBuilder extends PipelineBuilderBase {
     private _tonemapPass(
         ppl: rendering.BasicPipeline,
         settings: XQPipelineSettings,
-        cameraInfo: CameraInfo,
         width: number,
         height: number,
         radianceName: string,
@@ -105,26 +102,25 @@ export class PostProcessPassBuilder extends PipelineBuilderBase {
             const isSquareMap = lutTex.width === lutTex.height;
             pass = ppl.addRenderPass(width, height, isSquareMap ? 'cc-color-grading-8x8' : 'cc-color-grading-nx1');
             pass.name = 'colorGrading';
-            pass.addRenderTarget(colorName, LoadOp.CLEAR, StoreOp.STORE, this._clearColor);
+            pass.addRenderTarget(colorName, LoadOp.DISCARD, StoreOp.STORE);
             pass.addTexture(radianceName, 'sceneColorMap');
             pass.setVec2('lutTextureSize', this._colorGradingTexSize);
             pass.setFloat('contribute', settings.colorGrading.contribute);
-            pass.addQueue(QueueHint.OPAQUE)
-                .addFullscreenQuad(settings.colorGrading.material, isSquareMap ? 1 : 0);
+            pass.addQueue(QueueHint.NONE).addFullscreenQuad(settings.colorGrading.material, isSquareMap ? 1 : 0);
         } else {
-            pass = ppl.addRenderPass(width, height, 'pipeline-util');
+            pass = ppl.addRenderPass(width, height, 'tonemap');
             pass.name = 'toneMapping';
-            pass.addRenderTarget(colorName, LoadOp.CLEAR, StoreOp.STORE, this._clearColor);
+            pass.addRenderTarget(colorName, LoadOp.DISCARD, StoreOp.STORE);
             pass.addTexture(radianceName, 'inputTexture');
             
             // use custom toneMapping material if provided, otherwise fallback to utilMat
             const customMat = settings.toneMapping.material;
             if (customMat) {
-                pass.addQueue(QueueHint.OPAQUE).addFullscreenQuad(customMat, 0);
+                pass.addQueue(QueueHint.NONE).addFullscreenQuad(customMat, 0);
             } else {
-                const utilMat = builtinResMgr.get('utilMtl') as Material | undefined;
+                const utilMat = builtinResMgr.get<Material>('utilMtl');
                 assert(!!utilMat, 'utilMtl is required for tone mapping');
-                pass.addQueue(QueueHint.OPAQUE).addFullscreenQuad(utilMat, 0);
+                pass.addQueue(QueueHint.NONE).addFullscreenQuad(utilMat, 0);
             }
         }
 

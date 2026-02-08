@@ -1,13 +1,16 @@
 import { _decorator, builtinResMgr, director, gfx, Layers, PipelineEventType, renderer, rendering } from 'cc';
+import { XQPipelineSettings } from '../components/pipeline-settings';
+import { PipelineBuilderBase } from './builder-base';
 import { CameraInfo } from "./camera-info";
+import { _polyfillPPL } from './polyfill';
 import { RenderingContext } from "./rendering-context";
 import { MainPassBuilder } from './xq-mainpass';
 import { XQPipelineFeatures } from './xq-pipeline-features';
-import { XQPipelineSettings } from '../components/pipeline-settings';
 import { PostProcessPassBuilder } from './xq-postpass';
 import { PrePassBuilder } from './xq-prepass';
-import { UIPassBuilder } from './xq-uipass';
 import { ShadowPassBuilder } from './xq-shadowpass';
+import { SSSPassBuilder } from './xq-ssspass';
+import { UIPassBuilder } from './xq-uipass';
 
 const { requireComponent } = _decorator;
 
@@ -16,11 +19,13 @@ export class XQPipeline implements rendering.PipelineBuilder {
     private readonly _prePass = new PrePassBuilder(this);
     private readonly _shadowPass = new ShadowPassBuilder(this);
     private readonly _mainPass = new MainPassBuilder(this);
+    private readonly _sssPass = new SSSPassBuilder(this);
     private readonly _postPass = new PostProcessPassBuilder(this);
     private readonly _uiPass = new UIPassBuilder(this);
 
-    private readonly _passBuilders: rendering.PipelinePassBuilder[] = [
+    private readonly _passBuilders: PipelineBuilderBase[] = [
         this._prePass,
+        this._sssPass,
         this._shadowPass,
         this._mainPass,
         this._postPass,
@@ -67,15 +72,8 @@ export class XQPipeline implements rendering.PipelineBuilder {
         this._cameraInfo.reset(camera, this);
     }
 
-    private get _dependeiciesReady() {
-        // attach PipelineDependenciesLoader onto the main camera to initialize those necessary materials
-        const utilMat = builtinResMgr.get('utilMtl');
-        return !!utilMat;
-    }
-
     public windowResize(pipeline: rendering.BasicPipeline, window: renderer.RenderWindow, camera: renderer.scene.Camera, nativeWidth: number, nativeHeight: number): void {
-        if (!this._dependeiciesReady)
-            return;
+        _polyfillPPL(pipeline);
 
         this._features.reset(pipeline);
         this._updateSettingsAndInfo(camera);
@@ -86,10 +84,18 @@ export class XQPipeline implements rendering.PipelineBuilder {
             builder.windowResize?.(pipeline, this, this._cameraInfo, window, camera, nativeWidth, nativeHeight);
     }
 
+    private get _dependeiciesReady() {
+        // attach PipelineDependenciesLoader onto the main camera to initialize those necessary materials
+        const utilMat = builtinResMgr.get('utilMtl');
+        return !!utilMat;
+    }
+
     public setup(cameras: renderer.scene.Camera[], ppl: rendering.BasicPipeline): void {
         if (!this._dependeiciesReady)
             return;
 
+        _polyfillPPL(ppl);
+        
         this._profileCamera = CameraInfo.decideProfilerCamera(cameras);
         
         for (const camera of cameras) {
@@ -97,6 +103,9 @@ export class XQPipeline implements rendering.PipelineBuilder {
                 continue;
 
             this._updateSettingsAndInfo(camera);
+
+            for (const builder of this._passBuilders)
+                builder.updateGlobalResources?.(ppl, this, this._cameraInfo);
 
             this._pipelineEvent.emit(PipelineEventType.RENDER_CAMERA_BEGIN, camera);
 
@@ -122,7 +131,7 @@ export class XQPipeline implements rendering.PipelineBuilder {
     private _buildSimplePipeline(ppl: rendering.BasicPipeline, info: CameraInfo) {
         const camera = info.camera;
         
-        info.fillClearColor(this._clearColor);
+        info.fillClearColor(this._clearColor, true);
         info.fillViewport(this._viewport);
 
         const pass = ppl.addRenderPass(info.width, info.height);
@@ -139,9 +148,12 @@ export class XQPipeline implements rendering.PipelineBuilder {
         else
             pass.addDepthStencil(info.windowDepthStencil, gfx.LoadOp.LOAD, gfx.StoreOp.DISCARD);
         
-        const queue = pass.addQueue(rendering.QueueHint.OPAQUE);
-        queue.addScene(camera, rendering.SceneFlags.OPAQUE | rendering.SceneFlags.BLEND | rendering.SceneFlags.MASK | rendering.SceneFlags.GEOMETRY);
+        pass.addQueue(rendering.QueueHint.OPAQUE).addScene(camera, rendering.SceneFlags.OPAQUE | rendering.SceneFlags.MASK | rendering.SceneFlags.GEOMETRY);
+        const queue = pass.addQueue(rendering.QueueHint.BLEND)
+        queue.addScene(camera, rendering.SceneFlags.BLEND);
+        queue.addScene(camera, rendering.SceneFlags.UI);
         queue.addDraw2D(camera);
+
         if (info.isProfilerLayerCamera(this._profileCamera)) {
             pass.showStatistics = true;
             queue.addProfiler(camera);

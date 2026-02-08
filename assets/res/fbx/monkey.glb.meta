@@ -1,0 +1,75 @@
+{
+  "ver": "2.3.14",
+  "importer": "gltf",
+  "imported": true,
+  "uuid": "80e9ee79-1817-4d62-9606-b1762499027c",
+  "files": [],
+  "subMetas": {
+    "8c126": {
+      "importer": "gltf-mesh",
+      "uuid": "80e9ee79-1817-4d62-9606-b1762499027c@8c126",
+      "displayName": "",
+      "id": "8c126",
+      "name": "Suzanne_0.mesh",
+      "userData": {
+        "gltfIndex": 0,
+        "triangleCount": 15744
+      },
+      "ver": "1.1.1",
+      "imported": true,
+      "files": [
+        ".bin",
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "830a6": {
+      "importer": "gltf-scene",
+      "uuid": "80e9ee79-1817-4d62-9606-b1762499027c@830a6",
+      "displayName": "",
+      "id": "830a6",
+      "name": "monkey.prefab",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "imageMetas": [],
+    "lods": {
+      "enable": false,
+      "hasBuiltinLOD": false,
+      "options": [
+        {
+          "screenRatio": 0.25,
+          "faceCount": 1
+        },
+        {
+          "screenRatio": 0.125,
+          "faceCount": 0.25
+        },
+        {
+          "screenRatio": 0.01,
+          "faceCount": 0.1
+        }
+      ]
+    },
+    "assetFinder": {
+      "meshes": [
+        "80e9ee79-1817-4d62-9606-b1762499027c@8c126"
+      ],
+      "skeletons": [],
+      "textures": [],
+      "materials": [],
+      "scenes": [
+        "80e9ee79-1817-4d62-9606-b1762499027c@830a6"
+      ]
+    }
+  }
+}

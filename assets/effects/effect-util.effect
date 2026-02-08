@@ -1,13 +1,18 @@
 // Utility effect for pipeline
 // Pass 0: tone mapping
 // Pass 1: copy
+// Pass 2: copy-depth
+// Pass 3: ssss-blurX
+// Pass 4: ssss-blurY
+// Pass 5: ssss-extract
+// Pass 6: ssss-combine
 
 CCEffect %{
   techniques:
   - passes:
     - vert: vs
       frag: fs-tonemap
-      pass: pipeline-util
+      pass: tonemap
       rasterizerState:
         cullMode: none
       depthStencilState:
@@ -15,7 +20,49 @@ CCEffect %{
         depthWrite: false
     - vert: vs
       frag: fs-copy
-      pass: pipeline-util
+      pass: screen-blit
+      rasterizerState:
+        cullMode: none
+      depthStencilState:
+        depthTest: false
+        depthWrite: false
+    - vert: vs
+      frag: fs-copy-depth
+      pass: depth-blit
+      rasterizerState:
+        cullMode: none
+      depthStencilState:
+        depthTest: false
+        depthWrite: false
+    - vert: vs
+      frag: fs-ssss-blur
+      pass: ssss-blur-x
+      embeddedMacros: { SSSS_BLUR_HORIZONTAL: true }
+      rasterizerState:
+        cullMode: none
+      depthStencilState:
+        depthTest: false
+        depthWrite: false
+    - vert: vs
+      frag: fs-ssss-blur
+      pass: ssss-blur-y
+      embeddedMacros: { SSSS_BLUR_HORIZONTAL: false }
+      rasterizerState:
+        cullMode: none
+      depthStencilState:
+        depthTest: false
+        depthWrite: false
+    - vert: vs
+      frag: fs-ssss-extract
+      pass: ssss-extract
+      rasterizerState:
+        cullMode: none
+      depthStencilState:
+        depthTest: false
+        depthWrite: false
+    - vert: vs
+      frag: fs-ssss-combine
+      pass: ssss-combine
       rasterizerState:
         cullMode: none
       depthStencilState:
@@ -38,7 +85,6 @@ CCProgram vs %{
 
     v_uv = a_texCoord;
   }
-
 }%
 
 CCProgram fs-tonemap %{
@@ -74,5 +120,288 @@ CCProgram fs-copy %{
 
   void main () {
     fragColor = texture(inputTexture, v_uv);
+  }
+}%
+
+CCProgram fs-copy-depth %{
+  precision highp float;
+  #include <common/data/packing>
+
+  in vec2 v_uv;
+
+  #pragma rate depthInput pass
+  uniform sampler2D depthInput;
+
+  layout(location = 0) out vec4 fragColor;
+
+  void main () {
+    float depth = texture(depthInput, v_uv).r;
+    fragColor = packDepthToRGBA(depth);
+  }
+}%
+
+CCProgram ssss-blur-common %{
+  precision highp float;
+  #include <builtin/uniforms/cc-global>
+  #include <common/common-define>
+  #include <common/math/number>
+  #include <common/data/packing>
+  #include <common/color/gamma>
+  #include <common/math/coordinates>
+
+  #define SSSS_KERNEL_SIZE 25
+  #define SSSS_LUT_WIDTH 32.0
+  #define SSSS_LUT_HEIGHT 16.0
+  #define SSSS_DEPTH_DISCONTINUITY_THRESHOLD 0.05
+  #define SSSS_MAX_DECAY 0.333
+
+  #define BLUENOISE_SEQUENCE vec3(0.06711056, 0.00583715, 52.9829189)
+
+  #pragma rate SSSBlurUBO pass
+  uniform SSSBlurUBO {
+    vec4 sssInfo;      // x = quality, yzw = unused
+  };
+
+  #pragma rate colorInput pass
+  uniform sampler2D colorInput;
+  #pragma rate depthInput pass
+  uniform sampler2D depthInput;
+  #pragma rate sssKernelLut pass
+  uniform sampler2D sssKernelLut;
+
+  #include <effect-fucs>
+  
+  float getDepthPacked(vec4 pixel) {
+    if (pixel.w == 0.0)
+      return 0.0;
+    return unpackDepth(pixel.rg);
+  }
+
+  float getDepthPacked(vec2 uv) {
+    vec4 depthPacked = texture(depthInput, uv);
+    return getDepthPacked(depthPacked);
+  }
+  
+  vec4 sampleKernelLUT(float kernelSize, int sampleIndex, int profile, int qualityIndex, float dither) {
+    int lutRow = qualityIndex * 3 + (profile - 1);
+    
+    float u = (float(sampleIndex) + 0.5 + dither) * kernelSize;
+    float v = (float(lutRow) + 0.5/* + dither*/) / SSSS_LUT_HEIGHT;
+
+    return texture(sssKernelLut, vec2(u, v));
+  }
+
+  vec3 textureColor(vec2 uv, vec3 oColor, float oDpeth, float depthBias) {
+      if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0)
+          return oColor.rgb;
+      float nDepth = getDepthPacked(uv);
+      if (nDepth == 0.0)
+        return oColor;
+      vec3 nColor = texture(colorInput, uv).rgb;
+      return mix(nColor, oColor, smoothstep(0.0, SSSS_DEPTH_DISCONTINUITY_THRESHOLD, abs(oDpeth - nDepth) * depthBias));
+  }
+
+  vec4 processBlur(vec2 dir) {
+    vec2 gUV = getScreenUV();
+
+    vec4 color = texture(colorInput, gUV);
+
+    vec4 depthPacked = texture(depthInput, gUV);
+    float depth = getDepthPacked(depthPacked);
+
+    if (depth == 0.0)
+      return color;
+    
+    float skinInfo = depthPacked.b;
+    float sssIntensity, sssProfile;
+    unpackSkinInfo(skinInfo, sssProfile, sssIntensity);
+
+    int profile = int(sssProfile);
+    if (profile < 1 || sssIntensity == 0.0)
+      return color;
+
+    float scatterWorld = max(0.001, sssIntensity) / depthPacked.w;
+    float depthRange = (cc_nearFar.y - cc_nearFar.x);
+    float worldPos = cc_nearFar.x + depthRange * depth;
+    float depthBias = depthRange * SSSS_DEPTH_DISCONTINUITY_THRESHOLD / scatterWorld;
+
+    float projFactor = cc_matProj[0][0];
+    vec2 aspect = dir.x > 0.5 ? vec2(projFactor, 0.0) : vec2(0.0, projFactor * (cc_screenSize.y / cc_screenSize.x));
+    vec2 sStep = dir * aspect * scatterWorld / worldPos * SSSS_MAX_DECAY;
+    
+    int qualityIndex = int(sssInfo.x);
+    int quality = (qualityIndex == 0) ? 9 : (qualityIndex == 1) ? 17 : 25;
+    float kSize = 1.0 / SSSS_LUT_WIDTH;
+
+    vec3 colorBlurred = color.rgb * sampleKernelLUT(kSize, 0, profile, qualityIndex, 0.0).rgb;
+
+    float rnd = fract(BLUENOISE_SEQUENCE.z * fract(dot(gl_FragCoord.xy + mod(cc_time.z, 12.0)
+                 * vec2(47.0, 17.0) * 0.695, BLUENOISE_SEQUENCE.xy)));
+
+    for (int i = 1; i < SSSS_KERNEL_SIZE; i++) {
+      if (i >= quality) break;
+      
+      float dither = sampleKernelLUT(kSize, i, profile, qualityIndex, rnd).a;
+      vec2 offset = dither * sStep;
+      vec3 c = textureColor(gUV + offset, color.rgb, depth, depthBias);
+      c += textureColor(gUV - offset, color.rgb, depth, depthBias);
+
+      colorBlurred += c * sampleKernelLUT(kSize, i, profile, qualityIndex, 0.0).rgb;
+    }
+
+    return vec4(colorBlurred, color.a);
+  }
+}%
+
+CCProgram fs-ssss-blur %{
+  precision highp float;
+  #include <ssss-blur-common>
+
+  #if SSSS_BLUR_HORIZONTAL
+    #define BLUR_DIR vec2(1.0, 0.0)
+  #else
+    #define BLUR_DIR vec2(0.0, 1.0)
+  #endif
+
+  layout(location = 0) out vec4 fragColor;
+
+  void main () {
+    fragColor = processBlur(BLUR_DIR);
+    #if !SSSS_BLUR_HORIZONTAL
+      fragColor.a = 1.0;
+    #endif
+  }
+}%
+
+CCProgram fs-ssss-extract %{
+  precision highp float;
+  #include <builtin/uniforms/cc-global>
+  #include <common/common-define>
+  #include <common/data/packing>
+  #include <checkerboard>
+
+  #pragma rate SSSExtractUBO pass
+  uniform SSSExtractUBO {
+    vec4 halton;
+    vec4 textureSize;
+  };
+
+  #pragma rate colorInput pass
+  uniform sampler2D colorInput;
+  
+  #pragma rate depthInput pass
+  uniform sampler2D depthInput;
+
+  vec2 decodeSSSParams(float alpha) {
+    float threshold = 0.9;
+    if (alpha > threshold) {
+      return vec2(0.0, 0.0);
+    }
+    float encoded = alpha / 0.9 * 255.0;
+    float intensityLevel = mod(encoded, 16.0);
+    float scaleLevel = floor(encoded / 16.0);
+    float sssIntensity = intensityLevel / 15.0;
+    float scaleOverride = scaleLevel / 15.0;
+    return vec2(sssIntensity, scaleOverride);
+  }
+
+  vec4 sssExtract(vec2 uv) {
+    vec4 colorSample = texture(colorInput, uv);
+    
+    vec2 sssParams = decodeSSSParams(colorSample.a);
+    float sssIntensity = sssParams.x;
+    
+    if (colorSample.a > 0.9 || sssIntensity < 0.01) {
+      return vec4(colorSample.rgb, 1.0);
+    }
+    
+    vec3 diffuse, specular;
+    uncheckerboard(diffuse, specular, uv, colorInput, textureSize, halton);
+    
+    return vec4(diffuse, colorSample.a);
+  }
+
+  in vec2 v_uv;
+
+  layout(location = 0) out vec4 fragColor;
+
+  void main () {
+    fragColor = sssExtract(v_uv);
+  }
+}%
+
+CCProgram fs-ssss-combine %{
+  precision highp float;
+  #include <builtin/uniforms/cc-global>
+  #include <common/common-define>
+  #include <common/math/number>
+  #include <common/data/packing>
+  #include <common/math/coordinates>
+  #include <checkerboard>
+
+  #pragma rate SSSCombineUBO pass
+  uniform SSSCombineUBO {
+    vec4 halton;
+    vec4 combineParams;    // x: FOV, y: blurWidth, z: referenceScale, w: projFactor
+    vec4 textureSize;      // x: width, y: height, z: 1/width, w: 1/height
+  };
+
+  #pragma rate colorInput pass
+  uniform sampler2D colorInput;
+  
+  #pragma rate blurInput pass
+  uniform sampler2D blurInput;
+  
+  #pragma rate depthInput pass
+  uniform sampler2D depthInput;
+
+  vec2 decodeSSSParams(float alpha) {
+    float threshold = 0.9;
+    if (alpha > threshold) {
+      return vec2(0.0, 0.0);
+    }
+    float encoded = alpha / 0.9 * 255.0;
+    float intensityLevel = mod(encoded, 16.0);
+    float scaleLevel = floor(encoded / 16.0);
+    float sssIntensity = intensityLevel / 15.0;
+    float scaleOverride = scaleLevel / 15.0;
+    return vec2(sssIntensity, scaleOverride);
+  }
+
+  vec4 sssCombine(vec2 uv) {
+    vec4 colorSample = texture(colorInput, uv);
+    
+    vec2 sssParams = decodeSSSParams(colorSample.a);
+    float sssIntensity = sssParams.x;
+    float scaleOverride = sssParams.y;
+    
+    if (colorSample.a > 0.9 || sssIntensity < 0.01) {
+      return vec4(colorSample.rgb, 1.0);
+    }
+    
+    vec3 diffuse, specular;
+    uncheckerboard(diffuse, specular, uv, colorInput, textureSize, halton);
+    
+    vec3 blurredDiffuse = texture(blurInput, uv).rgb;
+
+    float depthHS = unpackRGBAToDepth(texture(depthInput, uv)) * 2.0 - 1.0;
+    float worldPos = -GetCameraDepthRH(depthHS, cc_matProj);
+    
+    float referenceScale = scaleOverride > 0.01 ? scaleOverride : combineParams.z;
+    float projFactor = combineParams.w;
+    float factor = projFactor * sssIntensity * referenceScale / max(worldPos, 0.001);
+    factor = smoothstep(0.05, 0.3, factor * 10.0);
+    
+    diffuse = mix(diffuse, blurredDiffuse, factor);
+    
+    return vec4(diffuse + specular, 1.0);
+  }
+
+  in vec2 v_uv;
+
+  layout(location = 0) out vec4 fragColor;
+
+  void main () {
+    fragColor = sssCombine(v_uv);
   }
 }%
