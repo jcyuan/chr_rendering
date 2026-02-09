@@ -4,8 +4,7 @@
 // Pass 2: copy-depth
 // Pass 3: ssss-blurX
 // Pass 4: ssss-blurY
-// Pass 5: ssss-extract
-// Pass 6: ssss-combine
+// Pass 5: ssss-combine
 
 CCEffect %{
   techniques:
@@ -47,14 +46,6 @@ CCEffect %{
       frag: fs-ssss-blur
       pass: ssss-blur-y
       embeddedMacros: { SSSS_BLUR_HORIZONTAL: false }
-      rasterizerState:
-        cullMode: none
-      depthStencilState:
-        depthTest: false
-        depthWrite: false
-    - vert: vs
-      frag: fs-ssss-extract
-      pass: ssss-extract
       rasterizerState:
         cullMode: none
       depthStencilState:
@@ -273,135 +264,12 @@ CCProgram fs-ssss-blur %{
   }
 }%
 
-CCProgram fs-ssss-extract %{
-  precision highp float;
-  #include <builtin/uniforms/cc-global>
-  #include <common/common-define>
-  #include <common/data/packing>
-  #include <checkerboard>
-
-  #pragma rate SSSExtractUBO pass
-  uniform SSSExtractUBO {
-    vec4 halton;
-    vec4 textureSize;
-  };
-
-  #pragma rate colorInput pass
-  uniform sampler2D colorInput;
-  
-  #pragma rate depthInput pass
-  uniform sampler2D depthInput;
-
-  vec2 decodeSSSParams(float alpha) {
-    float threshold = 0.9;
-    if (alpha > threshold) {
-      return vec2(0.0, 0.0);
-    }
-    float encoded = alpha / 0.9 * 255.0;
-    float intensityLevel = mod(encoded, 16.0);
-    float scaleLevel = floor(encoded / 16.0);
-    float sssIntensity = intensityLevel / 15.0;
-    float scaleOverride = scaleLevel / 15.0;
-    return vec2(sssIntensity, scaleOverride);
-  }
-
-  vec4 sssExtract(vec2 uv) {
-    vec4 colorSample = texture(colorInput, uv);
-    
-    vec2 sssParams = decodeSSSParams(colorSample.a);
-    float sssIntensity = sssParams.x;
-    
-    if (colorSample.a > 0.9 || sssIntensity < 0.01) {
-      return vec4(colorSample.rgb, 1.0);
-    }
-    
-    vec3 diffuse, specular;
-    uncheckerboard(diffuse, specular, uv, colorInput, textureSize, halton);
-    
-    return vec4(diffuse, colorSample.a);
-  }
-
-  in vec2 v_uv;
-
-  layout(location = 0) out vec4 fragColor;
-
-  void main () {
-    fragColor = sssExtract(v_uv);
-  }
-}%
-
 CCProgram fs-ssss-combine %{
   precision highp float;
-  #include <builtin/uniforms/cc-global>
-  #include <common/common-define>
-  #include <common/math/number>
-  #include <common/data/packing>
-  #include <common/math/coordinates>
-  #include <checkerboard>
-
-  #pragma rate SSSCombineUBO pass
-  uniform SSSCombineUBO {
-    vec4 halton;
-    vec4 combineParams;    // x: FOV, y: blurWidth, z: referenceScale, w: projFactor
-    vec4 textureSize;      // x: width, y: height, z: 1/width, w: 1/height
-  };
-
-  #pragma rate colorInput pass
-  uniform sampler2D colorInput;
   
-  #pragma rate blurInput pass
-  uniform sampler2D blurInput;
-  
-  #pragma rate depthInput pass
-  uniform sampler2D depthInput;
-
-  vec2 decodeSSSParams(float alpha) {
-    float threshold = 0.9;
-    if (alpha > threshold) {
-      return vec2(0.0, 0.0);
-    }
-    float encoded = alpha / 0.9 * 255.0;
-    float intensityLevel = mod(encoded, 16.0);
-    float scaleLevel = floor(encoded / 16.0);
-    float sssIntensity = intensityLevel / 15.0;
-    float scaleOverride = scaleLevel / 15.0;
-    return vec2(sssIntensity, scaleOverride);
-  }
-
-  vec4 sssCombine(vec2 uv) {
-    vec4 colorSample = texture(colorInput, uv);
-    
-    vec2 sssParams = decodeSSSParams(colorSample.a);
-    float sssIntensity = sssParams.x;
-    float scaleOverride = sssParams.y;
-    
-    if (colorSample.a > 0.9 || sssIntensity < 0.01) {
-      return vec4(colorSample.rgb, 1.0);
-    }
-    
-    vec3 diffuse, specular;
-    uncheckerboard(diffuse, specular, uv, colorInput, textureSize, halton);
-    
-    vec3 blurredDiffuse = texture(blurInput, uv).rgb;
-
-    float depthHS = unpackRGBAToDepth(texture(depthInput, uv)) * 2.0 - 1.0;
-    float worldPos = -GetCameraDepthRH(depthHS, cc_matProj);
-    
-    float referenceScale = scaleOverride > 0.01 ? scaleOverride : combineParams.z;
-    float projFactor = combineParams.w;
-    float factor = projFactor * sssIntensity * referenceScale / max(worldPos, 0.001);
-    factor = smoothstep(0.05, 0.3, factor * 10.0);
-    
-    diffuse = mix(diffuse, blurredDiffuse, factor);
-    
-    return vec4(diffuse + specular, 1.0);
-  }
-
-  in vec2 v_uv;
-
   layout(location = 0) out vec4 fragColor;
 
   void main () {
-    fragColor = sssCombine(v_uv);
+    fragColor = vec4(1.0, 0.0, 0.0, 1.0);
   }
 }%
