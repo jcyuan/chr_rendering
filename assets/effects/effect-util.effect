@@ -1,10 +1,8 @@
 // Utility effect for pipeline
 // Pass 0: tone mapping
 // Pass 1: copy
-// Pass 2: copy-depth
-// Pass 3: ssss-blurX
-// Pass 4: ssss-blurY
-// Pass 5: ssss-combine
+// Pass 2: ssss-blurX
+// Pass 3: ssss-blurY
 
 CCEffect %{
   techniques:
@@ -26,14 +24,6 @@ CCEffect %{
         depthTest: false
         depthWrite: false
     - vert: vs
-      frag: fs-copy-depth
-      pass: depth-blit
-      rasterizerState:
-        cullMode: none
-      depthStencilState:
-        depthTest: false
-        depthWrite: false
-    - vert: vs
       frag: fs-ssss-blur
       pass: ssss-blur-x
       embeddedMacros: { SSSS_BLUR_HORIZONTAL: true }
@@ -46,14 +36,6 @@ CCEffect %{
       frag: fs-ssss-blur
       pass: ssss-blur-y
       embeddedMacros: { SSSS_BLUR_HORIZONTAL: false }
-      rasterizerState:
-        cullMode: none
-      depthStencilState:
-        depthTest: false
-        depthWrite: false
-    - vert: vs
-      frag: fs-ssss-combine
-      pass: ssss-combine
       rasterizerState:
         cullMode: none
       depthStencilState:
@@ -114,23 +96,6 @@ CCProgram fs-copy %{
   }
 }%
 
-CCProgram fs-copy-depth %{
-  precision highp float;
-  #include <common/data/packing>
-
-  in vec2 v_uv;
-
-  #pragma rate depthInput pass
-  uniform sampler2D depthInput;
-
-  layout(location = 0) out vec4 fragColor;
-
-  void main () {
-    float depth = texture(depthInput, v_uv).r;
-    fragColor = packDepthToRGBA(depth);
-  }
-}%
-
 CCProgram ssss-blur-common %{
   precision highp float;
   #include <builtin/uniforms/cc-global>
@@ -144,7 +109,7 @@ CCProgram ssss-blur-common %{
   #define SSSS_LUT_WIDTH 32.0
   #define SSSS_LUT_HEIGHT 16.0
   #define SSSS_DEPTH_DISCONTINUITY_THRESHOLD 0.05
-  #define SSSS_MAX_DECAY 0.333
+  #define SSSS_MAX_SCALE 0.333
 
   #define BLUENOISE_SEQUENCE vec3(0.06711056, 0.00583715, 52.9829189)
 
@@ -218,7 +183,7 @@ CCProgram ssss-blur-common %{
 
     float projFactor = cc_matProj[0][0];
     vec2 aspect = dir.x > 0.5 ? vec2(projFactor, 0.0) : vec2(0.0, projFactor * (cc_screenSize.y / cc_screenSize.x));
-    vec2 sStep = dir * aspect * scatterWorld / worldPos * SSSS_MAX_DECAY;
+    vec2 sStep = dir * aspect * scatterWorld / worldPos * SSSS_MAX_SCALE;
     
     int qualityIndex = int(sssInfo.x);
     int quality = (qualityIndex == 0) ? 9 : (qualityIndex == 1) ? 17 : 25;
@@ -261,15 +226,5 @@ CCProgram fs-ssss-blur %{
     #if !SSSS_BLUR_HORIZONTAL
       fragColor.a = 1.0;
     #endif
-  }
-}%
-
-CCProgram fs-ssss-combine %{
-  precision highp float;
-  
-  layout(location = 0) out vec4 fragColor;
-
-  void main () {
-    fragColor = vec4(1.0, 0.0, 0.0, 1.0);
   }
 }%

@@ -77,27 +77,9 @@ CCEffect %{
 
     - vert: standard-vs
       frag: standard-fs
-      pass: specular-pass
+      phase: specular-pass
       propertyIndex: 0
       embeddedMacros: { CC_DRAW_DIFFUSE: false, CC_DRAW_SPECULAR: true, CC_SURFACES_LIGHTING_DISABLE_DIFFUSE: true, CC_SURFACES_LIGHTING_DISABLE_SPECULAR: true }
-      depthStencilState:
-        depthFunc: equal
-        depthTest: true
-        depthWrite: false
-      blendState:
-        targets:
-        - blend: true
-          blendSrc: one
-          blendDst: one
-          blendSrcAlpha: zero
-          blendDstAlpha: one
-
-    - vert: standard-vs
-      frag: standard-fs
-      pass: specular-pass
-      phase: forward-add
-      propertyIndex: 0
-      embeddedMacros: { CC_DRAW_DIFFUSE: false, CC_DRAW_SPECULAR: true, CC_FORWARD_ADD: true, CC_SURFACES_LIGHTING_DISABLE_DIFFUSE: true, CC_SURFACES_LIGHTING_DISABLE_SPECULAR: true }
       depthStencilState:
         depthFunc: equal
         depthTest: true

@@ -94,7 +94,7 @@ export class SSSPassBuilder extends PipelineBuilderBase {
             if (ppl.hasExternalTexture('sssKernelLut'))
                 blurPass.addTexture('sssKernelLut', 'sssKernelLut');
             blurPass.setVec4('sssInfo', this._sssInfo);
-            blurPass.addQueue(QueueHint.NONE).addFullscreenQuad(utilMtl, 4);
+            blurPass.addQueue(QueueHint.NONE).addFullscreenQuad(utilMtl, 3);
 
             blurPass = ppl.addRenderPass(this._viewport.width, this._viewport.height, 'ssss-blur-x');
             blurPass.name = 'ssssBlurX';
@@ -105,7 +105,7 @@ export class SSSPassBuilder extends PipelineBuilderBase {
             if (ppl.hasExternalTexture('sssKernelLut'))
                 blurPass.addTexture('sssKernelLut', 'sssKernelLut');
             blurPass.setVec4('sssInfo', this._sssInfo);
-            blurPass.addQueue(QueueHint.NONE).addFullscreenQuad(utilMtl, 3);
+            blurPass.addQueue(QueueHint.NONE).addFullscreenQuad(utilMtl, 2);
 
             copyPass = ppl.addRenderPass(this._viewport.width, this._viewport.height, 'screen-blit');
             copyPass.name = 'sssCopyBlurred';
@@ -115,12 +115,12 @@ export class SSSPassBuilder extends PipelineBuilderBase {
             copyPass.addQueue(QueueHint.NONE).addFullscreenQuad(utilMtl, 1);
         }
         
-        const specularPass = ppl.addRenderPass(this._viewport.width, this._viewport.height, 'specular-pass');
+        const specularPass = ppl.addRenderPass(this._viewport.width, this._viewport.height, 'default');
         specularPass.name = 'sssSpecular';
         specularPass.setViewport(this._viewport);
         specularPass.addRenderTarget(context.colorName, LoadOp.LOAD, StoreOp.STORE);
         specularPass.addDepthStencil(context.depthStencilName, LoadOp.LOAD, StoreOp.DISCARD);
-        const specularQueue = specularPass.addQueue(QueueHint.BLEND);
+        const specularQueue = specularPass.addQueue(QueueHint.BLEND, 'specular-pass');
         specularQueue.addScene(
             camera,
             SceneFlags.BLEND,
