@@ -36,14 +36,14 @@ export class SSSPassBuilder extends PipelineBuilderBase {
 
         ppl.addRenderTarget(
             sssBlurredName,
-            gfx.Format.RGBA8,
+            gfx.Format.R11G11B10F,
             cameraInfo.width,
             cameraInfo.height
         );
 
         ppl.addRenderTarget(
             sssBlendName,
-            gfx.Format.RGBA8,
+            gfx.Format.R11G11B10F,
             cameraInfo.width,
             cameraInfo.height
         );

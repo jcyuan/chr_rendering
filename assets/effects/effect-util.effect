@@ -8,8 +8,9 @@ CCEffect %{
   techniques:
   - passes:
     - vert: vs
-      frag: fs-tonemap
+      frag: fs-copy
       pass: tonemap
+      embeddedMacros: { COPY_TONEMAP: true }
       rasterizerState:
         cullMode: none
       depthStencilState:
@@ -60,30 +61,14 @@ CCProgram vs %{
   }
 }%
 
-CCProgram fs-tonemap %{
-  precision highp float;
-  #include <common/color/gamma>
-  #include <common/color/tone-mapping>
-  
-  in vec2 v_uv;
-
-  #pragma rate inputTexture pass
-  uniform sampler2D inputTexture;
-
-  layout(location = 0) out vec4 fragColor;
-
-  void main () {
-    fragColor = texture(inputTexture, v_uv);
-    #if CC_USE_FLOAT_OUTPUT
-      fragColor.rgb = HDRToLDR(fragColor.rgb);
-      fragColor.rgb = LinearToSRGB(fragColor.rgb);
-    #endif
-  }
-}%
-
 CCProgram fs-copy %{
   precision highp float;
 
+  #if COPY_TONEMAP
+    #include <common/color/gamma>
+    #include <common/color/tone-mapping>
+  #endif
+
   in vec2 v_uv;
 
   #pragma rate inputTexture pass
@@ -93,6 +78,13 @@ CCProgram fs-copy %{
 
   void main () {
     fragColor = texture(inputTexture, v_uv);
+
+    #if COPY_TONEMAP
+      #if CC_USE_FLOAT_OUTPUT
+        fragColor.rgb = HDRToLDR(fragColor.rgb);
+        fragColor.rgb = LinearToSRGB(fragColor.rgb);
+      #endif
+    #endif
   }
 }%
 
@@ -223,8 +215,5 @@ CCProgram fs-ssss-blur %{
 
   void main () {
     fragColor = processBlur(BLUR_DIR);
-    #if !SSSS_BLUR_HORIZONTAL
-      fragColor.a = 1.0;
-    #endif
   }
 }%
