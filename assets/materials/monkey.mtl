@@ -17,19 +17,9 @@
     {},
     {},
     {},
-    {},
     {}
   ],
   "_states": [
-    {
-      "rasterizerState": {},
-      "depthStencilState": {},
-      "blendState": {
-        "targets": [
-          {}
-        ]
-      }
-    },
     {
       "rasterizerState": {},
       "depthStencilState": {},
@@ -88,9 +78,8 @@
       "roughness": 0.7,
       "specularIntensity": 0.4,
       "scatteringFactor": 0.8,
-      "thicknessFactor": 0.6
+      "thicknessFactor": 0.4
     },
-    {},
     {},
     {},
     {},

@@ -32,7 +32,7 @@
     "_active": true,
     "_components": [],
     "_prefab": {
-      "__id__": 32
+      "__id__": 35
     },
     "_lpos": {
       "__type__": "cc.Vec3",
@@ -63,7 +63,7 @@
     },
     "autoReleaseAssets": false,
     "_globals": {
-      "__id__": 33
+      "__id__": 36
     },
     "_id": "fde82afd-fe21-410f-a5c8-98f24df486a9"
   },
@@ -504,6 +504,12 @@
       },
       {
         "__id__": 30
+      },
+      {
+        "__id__": 32
+      },
+      {
+        "__id__": 33
       }
     ],
     "removedComponents": []
@@ -556,7 +562,7 @@
     "_enabled": true,
     "__prefab": null,
     "_speedScale": 10,
-    "_id": "47gv+6P1pBf4sDIBpk0EQQ"
+    "_id": "9899irsZZJBZ3+3/OTblAa"
   },
   {
     "__type__": "CCPropertyOverrideInfo",
@@ -641,6 +647,32 @@
     ]
   },
   {
+    "__type__": "CCPropertyOverrideInfo",
+    "targetInfo": {
+      "__id__": 26
+    },
+    "propertyPath": [
+      "_active"
+    ],
+    "value": true
+  },
+  {
+    "__type__": "CCPropertyOverrideInfo",
+    "targetInfo": {
+      "__id__": 34
+    },
+    "propertyPath": [
+      "_active"
+    ],
+    "value": true
+  },
+  {
+    "__type__": "cc.TargetInfo",
+    "localID": [
+      "a7/QwExrdX5Kk4ZKU0a0hC"
+    ]
+  },
+  {
     "__type__": "cc.PrefabInfo",
     "root": null,
     "asset": null,
@@ -656,28 +688,28 @@
   {
     "__type__": "cc.SceneGlobals",
     "ambient": {
-      "__id__": 34
-    },
-    "shadows": {
-      "__id__": 35
-    },
-    "_skybox": {
-      "__id__": 36
-    },
-    "fog": {
       "__id__": 37
     },
-    "octree": {
+    "shadows": {
       "__id__": 38
     },
-    "skin": {
+    "_skybox": {
       "__id__": 39
     },
-    "lightProbeInfo": {
+    "fog": {
       "__id__": 40
     },
-    "postSettings": {
+    "octree": {
       "__id__": 41
+    },
+    "skin": {
+      "__id__": 42
+    },
+    "lightProbeInfo": {
+      "__id__": 43
+    },
+    "postSettings": {
+      "__id__": 44
     },
     "bakedWithStationaryMainLight": false,
     "bakedWithHighpLightmap": false

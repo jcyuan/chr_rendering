@@ -36,6 +36,7 @@ CCEffect %{
       depthStencilState:
         depthTest: true
         depthWrite: false
+        depthFunc: less_equal
 }%
 
 CCProgram smoke-sky-vs %{
@@ -50,8 +51,9 @@ CCProgram smoke-sky-vs %{
 
   vec4 vert () {
     v_uv = a_texCoord;
-    vec4 worldPos = cc_matWorld * vec4(a_position, 1.0);
-    return cc_matProj * cc_matView * worldPos;
+    vec4 clipPos = cc_matViewProj * cc_matWorld * vec4(a_position, 1.0);
+    clipPos.z = clipPos.w;
+    return clipPos;
   }
 }%
 
