@@ -1,7 +1,9 @@
 import { assert, builtinResMgr, gfx, Mat4, Material, renderer, rendering, Vec4 } from "cc";
+import { PipelineBuilderBase } from "./builder-base";
 import { CameraInfo } from "./camera-info";
 import { RenderingContext } from "./rendering-context";
 import { pipelineUtils } from "./utils";
+import { XQPipeline } from "./xq-pipeline";
 
 const { LoadOp, StoreOp } = gfx;
 const { QueueHint, ResourceResidency } = rendering;
@@ -15,7 +17,9 @@ enum TAAMode {
 const _mat4a = new Mat4();
 const _mat4b = new Mat4();
 
-export class TAAPassBuilder {
+export class TAAPassBuilder extends PipelineBuilderBase {
+    public static readonly RenderOrder = 500;
+
     private _prevViewProj = new Mat4();
     private _taaParams = new Vec4();
     private _motionCol0 = new Vec4();
@@ -26,23 +30,36 @@ export class TAAPassBuilder {
     private _firstFrame = true;
     private _initialized = false;
 
+    public getConfigOrder(): number {
+        return 0;
+    }
+
+    public getRenderOrder(): number {
+        return TAAPassBuilder.RenderOrder;
+    }
+
     public windowResize(
         ppl: rendering.BasicPipeline,
+        _builder: XQPipeline,
         cameraInfo: CameraInfo,
-        nativeWidth: number,
-        nativeHeight: number
+        _window: renderer.RenderWindow,
+        _camera: renderer.scene.Camera,
+        _nativeWidth: number,
+        _nativeHeight: number
     ): void {
         const format = cameraInfo.radianceFormat;
+        const w = cameraInfo.width;
+        const h = cameraInfo.height;
 
         ppl.addRenderTarget(
             cameraInfo.getTextureName('taaFrame0'),
-            format, nativeWidth, nativeHeight,
+            format, w, h,
             ResourceResidency.PERSISTENT
         );
 
         ppl.addRenderTarget(
             cameraInfo.getTextureName('taaFrame1'),
-            format, nativeWidth, nativeHeight,
+            format, w, h,
             ResourceResidency.PERSISTENT
         );
 
@@ -53,11 +70,11 @@ export class TAAPassBuilder {
 
     public setup(
         ppl: rendering.BasicPipeline,
+        _builder: XQPipeline,
         cameraInfo: CameraInfo,
         camera: renderer.scene.Camera,
         context: RenderingContext,
-        width: number,
-        height: number
+        _prevRenderPass?: rendering.BasicRenderPassBuilder
     ): rendering.BasicRenderPassBuilder | undefined {
         if (!this._initialized)
             return undefined;
@@ -96,7 +113,7 @@ export class TAAPassBuilder {
         this._taaParams.x = mode;
         this._taaParams.y = 1.0 / Math.max(this._staticFrameCount, 1);
 
-        const pass = ppl.addRenderPass(width, height, 'taa-resolve');
+        const pass = ppl.addRenderPass(cameraInfo.width, cameraInfo.height, 'taa-resolve');
         pass.name = 'taaResolve';
         pass.addRenderTarget(writeFrame, LoadOp.DISCARD, StoreOp.STORE);
         pass.addTexture(context.colorName, 'currentInput');

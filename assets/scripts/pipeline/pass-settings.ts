@@ -1,5 +1,5 @@
 import { _decorator, Enum, Material, Texture2D } from "cc";
-import { ISSSSettings } from "./xq-pipeline-types";
+import { IBloomSettings, IColorGradingSettings, IFSRSettings, IFXAASettings, ISSSSettings, IToneMappingSettings } from "./xq-pipeline-types";
 
 const { ccclass, property } = _decorator;
 
@@ -13,8 +13,16 @@ export interface IPropertyNotifier {
     onPropertyChanged(target: any, property: string, value: any): void;
 }
 
+export interface IPostEffectConfig {
+    readonly willModifyScreenColor: boolean;
+    readonly renderOrder: number;
+}
+
 @ccclass('BloomSettings')
-export class BloomSettings implements BloomSettings {
+export class BloomSettings implements IBloomSettings, IPostEffectConfig {
+    readonly willModifyScreenColor = false;
+    readonly renderOrder = 0;
+
     constructor(private _proxy: IPropertyNotifier) {
     }
 
@@ -119,7 +127,10 @@ export class BloomSettings implements BloomSettings {
 }
 
 @ccclass('ColorGradingSettings')
-export class ColorGradingSettings implements ColorGradingSettings {
+export class ColorGradingSettings implements IColorGradingSettings, IPostEffectConfig {
+    readonly willModifyScreenColor = false;
+    readonly renderOrder = 100;
+
     constructor(private _proxy: IPropertyNotifier) {
     }
 
@@ -169,7 +180,10 @@ export class ColorGradingSettings implements ColorGradingSettings {
 }
 
 @ccclass('FSRSettings')
-export class FSRSettings implements FSRSettings {
+export class FSRSettings implements IFSRSettings, IPostEffectConfig {
+    readonly willModifyScreenColor = true;
+    readonly renderOrder = 1000;
+
     constructor(private _proxy: IPropertyNotifier) {
     }
 
@@ -208,7 +222,10 @@ export class FSRSettings implements FSRSettings {
 }
 
 @ccclass('FXAASettings')
-export class FXAASettings implements FXAASettings {
+export class FXAASettings implements IFXAASettings, IPostEffectConfig {
+    readonly willModifyScreenColor = true;
+    readonly renderOrder = 0;
+
     constructor(private _proxy: IPropertyNotifier) {
     }
     
@@ -236,7 +253,10 @@ export class FXAASettings implements FXAASettings {
 }
 
 @ccclass('ToneMappingSettings')
-export class ToneMappingSettings implements ToneMappingSettings {
+export class ToneMappingSettings implements IToneMappingSettings, IPostEffectConfig {
+    readonly willModifyScreenColor = false;
+    readonly renderOrder = 100;
+
     constructor(private _proxy: IPropertyNotifier) {
     }
 

@@ -3,7 +3,6 @@ import { DEBUG, EDITOR } from "cc/env";
 import { PipelineBuilderBase } from "./builder-base";
 import { CameraInfo } from "./camera-info";
 import { RenderingContext } from "./rendering-context";
-import { pipelineUtils } from "./utils";
 import { XQPipeline } from "./xq-pipeline";
 import { ShadowPassBuilder } from "./xq-shadowpass";
 
