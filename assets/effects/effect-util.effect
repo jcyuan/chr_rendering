@@ -3,6 +3,7 @@
 // Pass 1: copy
 // Pass 2: ssss-blurX
 // Pass 3: ssss-blurY
+// Pass 4: taa-resolve
 
 CCEffect %{
   techniques:
@@ -37,6 +38,14 @@ CCEffect %{
       frag: fs-ssss-blur
       pass: ssss-blur-y
       embeddedMacros: { SSSS_BLUR_HORIZONTAL: false }
+      rasterizerState:
+        cullMode: none
+      depthStencilState:
+        depthTest: false
+        depthWrite: false
+    - vert: vs
+      frag: fs-taa-resolve
+      pass: taa-resolve
       rasterizerState:
         cullMode: none
       depthStencilState:
@@ -218,5 +227,174 @@ CCProgram fs-ssss-blur %{
 
   void main () {
     fragColor = processBlur(BLUR_DIR);
+  }
+}%
+
+CCProgram fs-taa-resolve %{
+  precision highp float;
+  #include <builtin/uniforms/cc-global>
+  #include <common/common-define>
+  #include <common/math/coordinates>
+  #include <includes/effect-fucs>
+
+  #define TAA_MODE_FIRST   0.0
+  #define TAA_MODE_TAA     1.0
+  #define TAA_MODE_SSAA    2.0
+
+  #pragma rate TAAUBO pass
+  uniform TAAUBO {
+    vec4 taaMotion0;
+    vec4 taaMotion1;
+    vec4 taaMotion2;
+    vec4 taaMotion3;
+    vec4 taaParams;
+  };
+
+  #pragma rate JitterUBO pass
+  uniform JitterUBO {
+    vec4 jitterInfo;
+  };
+
+  #pragma rate currentInput pass
+  uniform sampler2D currentInput;
+  #pragma rate historyInput pass
+  uniform sampler2D historyInput;
+  #pragma rate depthInput pass
+  uniform sampler2D depthInput;
+
+  float getLuminance(vec3 color) {
+    return dot(color, vec3(0.2126, 0.7152, 0.0722));
+  }
+
+  float sampleDepth(vec2 uv) {
+    vec4 depthSample = texture(depthInput, uv);
+    if (depthSample.w == 0.0)
+      return 0.0;
+    return unpackDepth(depthSample.rg);
+  }
+
+  vec3 closestFragment(vec2 uv, vec2 texelSize) {
+    float d;
+    vec2 size = 2.0 * texelSize;
+    vec3 dmin = vec3(0.0, 0.0, 0.0);
+
+    dmin.z = sampleDepth(uv);
+    d = sampleDepth(uv + vec2(-size.x,  size.y)); if (d > dmin.z) dmin = vec3(-size.x,  size.y, d);
+    d = sampleDepth(uv + vec2( size.x,  size.y)); if (d > dmin.z) dmin = vec3( size.x,  size.y, d);
+    d = sampleDepth(uv + vec2(-size.x, -size.y)); if (d > dmin.z) dmin = vec3(-size.x, -size.y, d);
+    d = sampleDepth(uv + vec2( size.x, -size.y)); if (d > dmin.z) dmin = vec3( size.x, -size.y, d);
+
+    return vec3(uv + dmin.xy, dmin.z);
+  }
+
+  vec3 reconstructViewPos(vec2 uv, float linearDepth) {
+    float viewZ = -(cc_nearFar.x + (cc_nearFar.y - cc_nearFar.x) * linearDepth);
+    vec2 ndc = uv * 2.0 - 1.0;
+    float viewX = ndc.x * (-viewZ) / cc_matProj[0][0];
+    float viewY = ndc.y * (-viewZ) / cc_matProj[1][1];
+    return vec3(viewX, viewY, viewZ);
+  }
+
+  vec2 computeSSVelocity(vec2 pixelPos, vec3 vsPos) {
+    mat4 motionMatrix = mat4(taaMotion0, taaMotion1, taaMotion2, taaMotion3);
+    vec4 prevClip = motionMatrix * vec4(vsPos, 1.0);
+    vec2 ndcPrev = prevClip.xy / prevClip.w;
+
+    if (ndcPrev.x >= 1.0 || ndcPrev.x <= -1.0 ||
+        ndcPrev.y >= 1.0 || ndcPrev.y <= -1.0)
+      return vec2(0.0);
+
+    vec2 ndcCurrent = pixelPos * 2.0 - 1.0;
+    return 0.5 * (ndcCurrent - ndcPrev);
+  }
+
+  vec4 clipAABB(vec4 aabbMin, vec4 aabbMax, vec4 color) {
+    const float eps = 0.00000001;
+    vec4 center = 0.5 * (aabbMax + aabbMin);
+    vec4 extents = 0.5 * (aabbMax - aabbMin) + eps;
+    vec4 offset = color - center;
+    vec4 ts = abs(offset / extents);
+    float t = max(max(ts.r, ts.g), max(ts.b, ts.a));
+    return center + offset / max(1.0, t);
+  }
+
+  vec4 taaResolve(vec2 ssVel, vec2 texelSize) {
+    vec2 uv = getScreenUV();
+
+    vec4 tl = texture(currentInput, uv + vec2(-texelSize.x,  texelSize.y));
+    vec4 t  = texture(currentInput, uv + vec2(         0.0,  texelSize.y));
+    vec4 tr = texture(currentInput, uv + vec2( texelSize.x,  texelSize.y));
+
+    vec4 ml = texture(currentInput, uv + vec2(-texelSize.x, 0.0));
+    vec4 m  = texture(currentInput, uv);
+    vec4 mr = texture(currentInput, uv + vec2( texelSize.x, 0.0));
+
+    vec4 bl = texture(currentInput, uv + vec2(-texelSize.x, -texelSize.y));
+    vec4 b  = texture(currentInput, uv + vec2(         0.0, -texelSize.y));
+    vec4 br = texture(currentInput, uv + vec2( texelSize.x, -texelSize.y));
+
+    vec4 corners = 2.0 * (tr + bl + br + tl) - 2.0 * m;
+    m += (m - (corners * 0.166667)) * 2.718282 * 0.3;
+    m = max(vec4(0.0), m);
+
+    vec4 cmin5 = min(mr, min(m, min(ml, min(t, b))));
+    vec4 cmin = min(cmin5, min(tl, min(tr, min(bl, br))));
+
+    vec4 cmax5 = max(mr, max(m, max(ml, max(t, b))));
+    vec4 cmax = max(cmax5, max(tl, max(tr, max(bl, br))));
+
+    cmin = 0.5 * (cmin + cmin5);
+    cmax = 0.5 * (cmax + cmax5);
+
+    vec4 previousColor = texture(historyInput, uv - ssVel);
+    previousColor = clipAABB(cmin, cmax, previousColor);
+
+    float lum0 = getLuminance(m.rgb);
+    float lum1 = getLuminance(previousColor.rgb);
+    float diff = abs(lum0 - lum1) / max(lum0, max(lum1, 0.2));
+    float unbiasedWeight = 1.0 - diff;
+    // feedback = (1 - 1/8.3), (1 - 1/33.5)
+    float feedback = mix(0.88, 0.97, unbiasedWeight * unbiasedWeight);
+
+    return mix(m, previousColor, feedback);
+  }
+
+  vec4 superSample() {
+    vec2 uv = getScreenUV();
+    vec4 current = texture(currentInput, uv);
+    vec4 history = texture(historyInput, uv);
+    float blendFactor = taaParams.y;
+    return mix(current, history, 1.0 - blendFactor);
+  }
+
+  layout(location = 0) out vec4 fragColor;
+
+  void main () {
+    vec2 uv = getScreenUV();
+    float mode = taaParams.x;
+
+    if (mode == TAA_MODE_FIRST) {
+      fragColor = texture(currentInput, uv);
+      return;
+    }
+
+    if (mode == TAA_MODE_SSAA) {
+      fragColor = superSample();
+      return;
+    }
+
+    vec2 texelSize = cc_screenSize.zw;
+    vec3 closest = closestFragment(uv, texelSize);
+
+    if (closest.z == 0.0) {
+      vec2 unjitteredUV = uv - jitterInfo.xy * texelSize * 0.5;
+      fragColor = texture(currentInput, unjitteredUV);
+      return;
+    }
+
+    vec3 viewPos = reconstructViewPos(closest.xy, closest.z);
+    vec2 ssVel = computeSSVelocity(closest.xy, viewPos);
+
+    fragColor = taaResolve(ssVel, texelSize);
   }
 }%
