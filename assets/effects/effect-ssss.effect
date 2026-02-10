@@ -113,6 +113,7 @@ CCProgram macro-remapping %{
   #pragma define-meta USE_DUAL_LOBE_SPECULAR
   #pragma define-meta USE_SUBSURFACE_MAP
   #pragma define-meta USE_THICKNESS_MAP
+  #pragma define-meta USE_SSS 1
 
   #define CC_SURFACES_USE_SECOND_UV HAS_SECOND_UV
   #define CC_SURFACES_USE_TWO_SIDED USE_TWOSIDE
@@ -242,11 +243,6 @@ CCProgram surface-fragment %{
   #if CC_DRAW_DIFFUSE
   #pragma rate inputDepth pass
   uniform sampler2D inputDepth;
-  #pragma rate GlobalDataUBO pass
-  uniform GlobalDataUBO {
-    vec4 globalData;    // x = ssss enabled, yzw = unused
-  };
-  
   #include <includes/effect-fucs>
   #endif
 
@@ -263,7 +259,7 @@ CCProgram surface-fragment %{
         result.environmentDiffuse = CalculateEnvironmentDiffuse(lightingData, cc_ambientSky.w);
       #endif
 
-      if (globalData.x == 1.0) {
+      #if USE_SSS
         float thicknessFactor = max(0.00001, scatterParams.x) * (1.0 / dualLobeParams.z);
         float translucencyFactor = max(0.00001, scatterParams.y);
         float thickness = 0.0;
@@ -289,7 +285,7 @@ CCProgram surface-fragment %{
         
         vec3 transmit = finalAttenuation * lightColor * materialDiffuse * transmittance;
         result.directDiffuse += transmit;
-      }
+      #endif
     
     #endif
     

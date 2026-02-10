@@ -1,4 +1,4 @@
-import { gfx, ReflectionProbeManager, renderer, rendering, Vec3, Vec4, warn } from "cc";
+import { gfx, ReflectionProbeManager, renderer, rendering, Vec3, warn } from "cc";
 import { DEBUG, EDITOR } from "cc/env";
 import { PipelineBuilderBase } from "./builder-base";
 import { CameraInfo } from "./camera-info";
@@ -18,8 +18,7 @@ export class MainPassBuilder extends PipelineBuilderBase {
     private _viewport = new Viewport();
     private _clearColor = new Color();
     private _reflectionProbeClearColor = new Vec3(0, 0, 0);
-    private _globalData = new Vec4();
-
+    
     public getConfigOrder(): number {
         return 0;
     }
@@ -86,10 +85,8 @@ export class MainPassBuilder extends PipelineBuilderBase {
         context: RenderingContext,
     ): rendering.BasicRenderPassBuilder {
         const { width, height, mainLight } = cameraInfo;
-        this._globalData.x = builder.settings?.skin?.enabled === true ? 1 : 0;
 
         const pass = ppl.addRenderPass(width, height, 'default');
-        pass.setVec4('globalData', this._globalData);
         pass.name = 'forwardPass';
         this._buildForwardMainLightPass(pass, cameraInfo, camera, context, mainLight);
         
