@@ -18,7 +18,7 @@ CCEffect %{
         normalMap:                        { value: normal }
         pbrMap:                           { value: grey, editor: { displayName: PbrOrRoughnessMap } }
         occlusionMap:                     { value: white }
-        modelExtent:                      { value: 0.0, target: emissiveScaleParam.z, editor: { visible: false, displayName: Model Extent, min: 0, tooltip: 'The extent of the model in world space (extra range included), please use SSSModelExtentCalculator component to calculate this value automatically' } }
+        modelExtent:                      { value: 0.0, target: dualLobeParams.z, editor: { visible: false, displayName: Model Extent, min: 0, tooltip: 'The extent of the model in world space (extra range included), please use SSSModelExtentCalculator component to calculate this value automatically' } }
         scatteringProfile:                { value: 1.0, target: scatterParams.z, editor: { visible: false, displayName: Scattering Profile, slide: true, range: [1, 3], step: 1 } }
         subsurfaceMap:                    { value: white, editor: { parent: USE_SUBSURFACE_MAP, displayName: Subsurface Map, tooltip: 'R=Scatter intensity, G=Cavity' } }
         scatteringFactor:                 { value: 0.5, target: scatterParams.w, editor: { displayName: Scattering Factor, slide: true, range: [0, 1], step: 0.001 } }
@@ -35,11 +35,11 @@ CCEffect %{
         depthTest: true
         depthWrite: true
 
-    - vert: prepass-vs:vert
-      frag: prepass-fs
-      phase: prepass-depth
-      propertyIndex: 0
+    - vert: standard-prepass-vs
+      frag: standard-prepass-fs
+      phase: prepass
       embeddedMacros: { CC_SURFACES_LIGHTING_DISABLE_DIFFUSE: true, CC_SURFACES_LIGHTING_DISABLE_SPECULAR: true }
+      propertyIndex: 0
       depthStencilState:
         depthFunc: less_equal
         depthTest: true
@@ -102,7 +102,7 @@ CCProgram shared-ubos %{
     vec4 emissiveScaleParam;
     vec4 translucencyColor;
     vec4 scatterParams;   // x: thicknessFactor, y: translucencyFactor, z: scatteringProfile, w: scatteringFactor
-    vec4 dualLobeParams;
+    vec4 dualLobeParams;  // x: dualLobeRoughness, y: unused, z: modelExtent, w: dualLobeIntensity
   };
 }%
 
@@ -247,10 +247,10 @@ CCProgram surface-fragment %{
     vec4 globalData;    // x = ssss enabled, yzw = unused
   };
   
-  #include <effect-fucs>
+  #include <includes/effect-fucs>
   #endif
 
-  #include <__bug72_patch>
+  #include <includes/__bug72_patch>
   
   #define CC_SURFACES_LIGHTING_MODIFY_FINAL_RESULT
   void SurfacesLightingModifyFinalResult(inout LightingResult result, in LightingIntermediateData lightingData, in SurfacesMaterialData surfaceData, in LightingMiscData miscData)
@@ -264,8 +264,8 @@ CCProgram surface-fragment %{
       #endif
 
       if (globalData.x == 1.0) {
-        float thicknessFactor = max(0.001, scatterParams.x) * (1.0 / emissiveScaleParam.z);
-        float translucencyFactor = max(0.001, scatterParams.y);
+        float thicknessFactor = max(0.00001, scatterParams.x) * (1.0 / dualLobeParams.z);
+        float translucencyFactor = max(0.00001, scatterParams.y);
         float thickness = 0.0;
         
         #if USE_THICKNESS_MAP
@@ -303,67 +303,6 @@ CCProgram surface-fragment %{
   }
 
   #include <advanced/common-functions>
-}%
-
-CCProgram prepass-vs %{
-  precision highp float;
-  #include <builtin/uniforms/cc-global>
-  #include <builtin/uniforms/cc-local>
-
-  in vec3 a_position;
-  #if USE_SUBSURFACE_MAP
-    in vec2 a_texCoord;
-    out vec2 v_uv;
-  #endif
-
-  out highp float v_viewDepth;
-
-  vec4 vert() {
-    vec4 worldPos = cc_matWorld * vec4(a_position, 1.0);
-    vec4 viewPos = cc_matView * worldPos;
-    
-    #if USE_SUBSURFACE_MAP
-      v_uv = a_texCoord;
-    #endif
-    
-    v_viewDepth = -viewPos.z;
-    
-    return cc_matProj * viewPos;
-  }
-}%
-
-CCProgram prepass-fs %{
-  precision highp float;
-  #include <builtin/uniforms/cc-global>
-  #include <shared-ubos>
-  #include <effect-fucs>
-
-  #if USE_SUBSURFACE_MAP
-    uniform sampler2D subsurfaceMap;
-    in vec2 v_uv;
-  #endif
-
-  in float v_viewDepth;
-
-  layout(location = 0) out vec4 fragColor;
-
-  void main() {
-    float scatteringProfile = scatterParams.z;
-    float modelExtent = emissiveScaleParam.z;
-    float scattering = scatterParams.w;
-    
-    #if USE_SUBSURFACE_MAP
-      scattering *= texture(subsurfaceMap, v_uv).r;
-    #endif
-    scattering = modelExtent * (scattering * (1.0 / modelExtent));
-    
-    highp float depth = (v_viewDepth - cc_nearFar.x) / (cc_nearFar.y - cc_nearFar.x);
-
-    vec2 packedDepth = packDepth(depth);
-    float skinInfo = packSkinInfo(scatteringProfile, scattering);
-    
-    fragColor = vec4(packedDepth.x, packedDepth.y, skinInfo, modelExtent);
-  }
 }%
 
 CCProgram standard-vs %{
@@ -419,4 +358,12 @@ CCProgram reflect-map-fs %{
   #include <lighting-models/includes/standard>
   #include <surfaces/includes/standard-fs>
   #include <shading-entries/main-functions/render-to-reflectmap/fs>
+}%
+
+CCProgram standard-prepass-vs %{
+  #include <includes/prepass-vs>
+}%
+
+CCProgram standard-prepass-fs %{
+  #include <includes/prepass-fs>
 }%

@@ -117,7 +117,7 @@ CCProgram ssss-blur-common %{
   #pragma rate sssKernelLut pass
   uniform sampler2D sssKernelLut;
 
-  #include <effect-fucs>
+  #include <includes/effect-fucs>
   
   float getDepthPacked(vec4 pixel) {
     if (pixel.w == 0.0)
@@ -162,7 +162,7 @@ CCProgram ssss-blur-common %{
     
     float skinInfo = depthPacked.b;
     float sssIntensity, sssProfile;
-    unpackSkinInfo(skinInfo, sssProfile, sssIntensity);
+    unpackSSSInfo(skinInfo, sssProfile, sssIntensity);
 
     int profile = int(sssProfile);
     if (profile < 1 || sssIntensity == 0.0)

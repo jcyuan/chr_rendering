@@ -5,14 +5,13 @@ import { RenderingContext } from "./rendering-context";
 import { XQPipeline } from "./xq-pipeline";
 import { XQPipelineSettings } from "../components/pipeline-settings";
 
-const { Color, LoadOp, StoreOp } = gfx;
+const { LoadOp, StoreOp } = gfx;
 const { QueueHint } = rendering;
 
 export class PostProcessPassBuilder extends PipelineBuilderBase {
     public static readonly RenderOrder = 500;
     
     private readonly _colorGradingTexSize = new Vec2(0, 0);
-    private readonly _clearColor = new Color(0, 0, 0, 0);
     
     getConfigOrder(): number {
         return 0;

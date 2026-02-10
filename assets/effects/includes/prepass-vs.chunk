@@ -1,0 +1,25 @@
+precision highp float;
+#include <builtin/uniforms/cc-global>
+#include <builtin/uniforms/cc-local>
+
+in vec3 a_position;
+
+#if USE_SUBSURFACE_MAP
+    in vec2 a_texCoord;
+    out vec2 v_uv;
+#endif
+
+out highp float v_viewDepth;
+
+void main() {
+    vec4 worldPos = cc_matWorld * vec4(a_position, 1.0);
+    vec4 viewPos = cc_matView * worldPos;
+
+    #if USE_SUBSURFACE_MAP
+        v_uv = a_texCoord;
+    #endif
+
+    v_viewDepth = -viewPos.z;
+
+    gl_Position = cc_matProj * viewPos;
+}

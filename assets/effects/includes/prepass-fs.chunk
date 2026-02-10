@@ -1,0 +1,36 @@
+precision highp float;
+#include <builtin/uniforms/cc-global>
+#include <includes/effect-fucs>
+
+#if USE_SUBSURFACE_MAP
+    uniform sampler2D subsurfaceMap;
+    in vec2 v_uv;
+#endif
+in float v_viewDepth;
+
+uniform DefaultConstants {
+    vec4 scatterParams;   // x: thicknessFactor, y: translucencyFactor, z: scatteringProfile, w: scatteringFactor
+    vec4 dualLobeParams;  // x: dualLobeRoughness, y: unused, z: modelExtent, w: dualLobeIntensity
+};
+
+layout(location = 0) out vec4 fragColor;
+
+void main() {
+    highp float depth = (v_viewDepth - cc_nearFar.x) / (cc_nearFar.y - cc_nearFar.x);
+    vec2 packedDepth = packDepth(depth);
+
+    float scatteringProfile = scatterParams.z;
+    if (scatteringProfile > 0.0) {
+        float scattering = scatterParams.w;
+        float modelExtent = max(0.00001, dualLobeParams.z);
+        
+        #if USE_SUBSURFACE_MAP
+            scattering *= texture(subsurfaceMap, v_uv).r;
+        #endif
+        scattering = modelExtent * (scattering * (1.0 / modelExtent));
+
+        float sssInfo = packSSSInfo(scatteringProfile, scattering);
+        fragColor = vec4(packedDepth.x, packedDepth.y, sssInfo, modelExtent);
+    } else
+        fragColor = vec4(packedDepth.x, packedDepth.y, 0.0, 0.0);
+}

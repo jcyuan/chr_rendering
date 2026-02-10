@@ -17,7 +17,7 @@ float unpackDepth(vec2 rg) {
 // pack profile + scatter into 12-bit value (stored in float, safe for float16)
 // layout: [profile: high 3 bits (0~7)] [scatter: low 9 bits (0~511)]
 // profile 0 = no SSS, 1~7 = profile index
-float packSkinInfo(float profile, float scatter) {
+float packSSSInfo(float profile, float scatter) {
     float p = floor(clamp(profile, 0.0, 7.0) + 0.5);
     float s = floor(clamp(scatter, 0.0, 1.0) * 511.0 + 0.5);
     return (p * 512.0 + s) / 4095.0;
@@ -25,7 +25,7 @@ float packSkinInfo(float profile, float scatter) {
 
 // out profile: [0, 7]  (0 = no SSS, 1~7 = profile index)
 // out scatter: [0, 1]  (9-bit precision, 512 levels)
-void unpackSkinInfo(float packedInfo, out float profile, out float scatter) {
+void unpackSSSInfo(float packedInfo, out float profile, out float scatter) {
     float val12 = floor(packedInfo * 4095.0 + 0.5);
     profile = floor(val12 / 512.0);          // high 3 bits
     scatter = (val12 - profile * 512.0) / 511.0; // low 9 bits

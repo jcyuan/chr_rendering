@@ -37,6 +37,16 @@ CCEffect %{
         depthTest: true
         depthWrite: false
         depthFunc: less_equal
+
+    - vert: standard-prepass-vs
+      frag: standard-prepass-fs
+      phase: prepass
+      propertyIndex: 0
+      embeddedMacros: { CC_SURFACES_LIGHTING_DISABLE_DIFFUSE: true, CC_SURFACES_LIGHTING_DISABLE_SPECULAR: true }
+      depthStencilState:
+        depthFunc: less_equal
+        depthTest: true
+        depthWrite: true
 }%
 
 CCProgram smoke-sky-vs %{
@@ -61,7 +71,7 @@ CCProgram smoke-sky-fs %{
   precision highp float;
   #include <builtin/uniforms/cc-global>
   #include <common/color/gamma>
-  #include <vfx-common>
+  #include <includes/vfx-common>
 
   in vec2 v_uv;
 
@@ -182,4 +192,12 @@ CCProgram smoke-sky-fs %{
     
     return vec4(finalColor, 1.0);
   }
+}%
+
+CCProgram standard-prepass-vs %{
+  #include <includes/prepass-vs>
+}%
+
+CCProgram standard-prepass-fs %{
+  #include <includes/prepass-fs>
 }%

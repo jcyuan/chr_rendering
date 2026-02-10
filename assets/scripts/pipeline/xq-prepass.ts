@@ -78,7 +78,7 @@ export class PrePassBuilder extends PipelineBuilderBase {
             1, 0,
             gfx.ClearFlagBit.DEPTH_STENCIL
         );
-        pass.addQueue(QueueHint.OPAQUE, 'prepass-depth')
+        pass.addQueue(QueueHint.OPAQUE, 'prepass')
             .addScene(camera, SceneFlags.OPAQUE | SceneFlags.MASK);
             
         context.depthStencilName = pipelineUtils.needOffscreenRT(builder, cameraInfo)
