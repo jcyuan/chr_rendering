@@ -22,12 +22,11 @@ void main() {
     float scatteringProfile = scatterParams.z;
     if (scatteringProfile > 0.0) {
         float scattering = scatterParams.w;
-        float modelExtent = max(0.00001, dualLobeParams.z);
+        float modelExtent = max(0.001, dualLobeParams.z);
         
         #if USE_SUBSURFACE_MAP
             scattering *= texture(subsurfaceMap, v_uv).r;
         #endif
-        scattering = modelExtent * (scattering * (1.0 / modelExtent));
 
         float sssInfo = packSSSInfo(scatteringProfile, scattering);
         fragColor = vec4(packedDepth.x, packedDepth.y, sssInfo, modelExtent);

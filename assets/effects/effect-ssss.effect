@@ -18,7 +18,7 @@ CCEffect %{
         normalMap:                        { value: normal }
         pbrMap:                           { value: grey, editor: { displayName: PbrOrRoughnessMap } }
         occlusionMap:                     { value: white }
-        modelExtent:                      { value: 0.0, target: dualLobeParams.z, editor: { visible: false, displayName: Model Extent, min: 0, tooltip: 'The extent of the model in world space (extra range included), please use SSSModelExtentCalculator component to calculate this value automatically' } }
+        modelExtent:                      { value: 8.0, target: dualLobeParams.z, editor: { visible: false, displayName: Model Extent, min: 0.001, tooltip: 'World-space reference scale for SSS normalization. Use a fixed value (default 8.0) for consistent slider behavior across all models.' } }
         scatteringProfile:                { value: 1.0, target: scatterParams.z, editor: { visible: false, displayName: Scattering Profile, slide: true, range: [1, 3], step: 1 } }
         subsurfaceMap:                    { value: white, editor: { parent: USE_SUBSURFACE_MAP, displayName: Subsurface Map, tooltip: 'R=Scatter intensity, G=Cavity' } }
         scatteringFactor:                 { value: 0.5, target: scatterParams.w, editor: { displayName: Scattering Factor, slide: true, range: [0, 1], step: 0.001 } }
