@@ -2,7 +2,7 @@ import { assert, builtinResMgr, gfx, Material, renderer, rendering, Vec4, warn }
 import { PipelineBuilderBase } from "./builder-base";
 import { CameraInfo } from "./camera-info";
 import { RenderingContext } from "./rendering-context";
-
+import { SSSQuality } from "./pass-settings";
 import { XQPipeline } from "./xq-pipeline";
 
 const { LoadOp, StoreOp } = gfx;
@@ -51,7 +51,7 @@ export class SSSPassBuilder extends PipelineBuilderBase {
 
     public override updateGlobalResources(ppl: rendering.BasicPipeline, builder: XQPipeline, cameraInfo: CameraInfo): void {
         if (cameraInfo.SSSSEnabled) {
-            const lutTexture = builder.settings?.skin.sssLutTexture?.getGFXTexture();
+            const lutTexture = builder.settings?.sss.lutTexture?.getGFXTexture();
             if (!lutTexture)
                 warn(`SSS LUT texture not found, please make sure the pipeline settings is correct`);
             else
@@ -68,7 +68,7 @@ export class SSSPassBuilder extends PipelineBuilderBase {
         prevRenderPass?: rendering.BasicRenderPassBuilder
     ): rendering.BasicRenderPassBuilder | undefined {
         cameraInfo.fillViewport(this._viewport);
-
+        
         if (cameraInfo.SSSSEnabled) {
             const utilMtl = builtinResMgr.get<Material>('utilMtl');
             assert(!!utilMtl, 'utilMtl is required for SSS pass');
@@ -76,7 +76,7 @@ export class SSSPassBuilder extends PipelineBuilderBase {
             const sssBlurredName = cameraInfo.getTextureName('sssBlurred');
             const sssBlendName = cameraInfo.getTextureName('sssBlend');
             
-            this._sssInfo.x = builder.settings?.skin.sssQuality ?? 0;
+            this._sssInfo.x = builder.settings?.sss.quality ?? SSSQuality.Medium;
 
             let copyPass = ppl.addRenderPass(this._viewport.width, this._viewport.height, 'screen-blit');
             copyPass.name = 'sssCopyDiffuse';

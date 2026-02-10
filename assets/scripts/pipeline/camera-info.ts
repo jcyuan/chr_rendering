@@ -36,7 +36,7 @@ export class CameraInfo extends WindowInfo {
         this._HDREnabled = features.isHDR;
         this._radianceFormat = this._HDREnabled ? gfx.Format.RGBA16F : gfx.Format.RGBA8;
 
-        this._SSSSEnabled = settings.skin?.enabled ?? false;
+        this._SSSSEnabled = settings.sss?.enabled ?? false;
         this._needOffscreenDepth = this._SSSSEnabled; // || settings.somePostEfxNeedDepthTexture?.enabled;
         
         this._shadowMapFormat = features.shadowMapFormat;

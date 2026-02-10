@@ -8,7 +8,7 @@ export interface IPipelineSettings {
     readonly colorGrading: IColorGradingSettings;
     readonly fsr: IFSRSettings;
     readonly fxaa: IFXAASettings;
-    readonly skin: ISkinSettings;
+    readonly sss: ISSSSettings;
 }
 
 export interface IBloomSettings {
@@ -45,7 +45,7 @@ export interface IToneMappingSettings {
     material: Material | null; /* null - uses built-in utilMtl */
 }
 
-export interface ISkinSettings {
-    sssQuality: number; /* SSSQuality.High */
-    sssLutTexture: Texture2D | null; /* null */
+export interface ISSSSettings {
+    quality: number; /* SSSQuality.High */
+    lutTexture: Texture2D | null; /* null */
 }
