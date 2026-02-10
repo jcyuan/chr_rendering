@@ -1,5 +1,5 @@
 import { _decorator, Enum, Material, Texture2D } from "cc";
-import { ISkinSettings } from "./xq-pipeline-types";
+import { ISSSSettings } from "./xq-pipeline-types";
 
 const { ccclass, property } = _decorator;
 
@@ -26,7 +26,7 @@ export class BloomSettings implements BloomSettings {
     }
     set enabled(v: boolean) {
         this._enabled = v;
-        this._proxy?.onPropertyChanged(this, 'enabled', v);
+        this._proxy?.onPropertyChanged(this, 'bloom.enabled', v);
     }
 
     @property({ type: BloomTypeEnum })
@@ -37,7 +37,7 @@ export class BloomSettings implements BloomSettings {
     }
     set type(v: BloomType) {
         this._type = v;
-        this._proxy?.onPropertyChanged(this, 'type', v);
+        this._proxy?.onPropertyChanged(this, 'bloom.type', v);
     }
 
     @property({ type: Material })
@@ -48,7 +48,7 @@ export class BloomSettings implements BloomSettings {
     }
     set material(v: Material) {
         this._material = v;
-        this._proxy?.onPropertyChanged(this, 'material', v);
+        this._proxy?.onPropertyChanged(this, 'bloom.material', v);
     }
 
     @property({ type: Material })
@@ -59,7 +59,7 @@ export class BloomSettings implements BloomSettings {
     }
     set kawaseFilterMaterial(v: Material) {
         this._kawaseFilterMaterial = v;
-        this._proxy?.onPropertyChanged(this, 'kawaseFilterMaterial', v);
+        this._proxy?.onPropertyChanged(this, 'bloom.kawaseFilterMaterial', v);
     }
 
     @property({ type: Material })
@@ -70,7 +70,7 @@ export class BloomSettings implements BloomSettings {
     }
     set mipmapFilterMaterial(v: Material) {
         this._mipmapFilterMaterial = v;
-        this._proxy?.onPropertyChanged(this, 'mipmapFilterMaterial', v);
+        this._proxy?.onPropertyChanged(this, 'bloom.mipmapFilterMaterial', v);
     }
 
     @property
@@ -81,7 +81,7 @@ export class BloomSettings implements BloomSettings {
     }
     set enableAlphaMask(v: boolean) {
         this._enableAlphaMask = v;
-        this._proxy?.onPropertyChanged(this, 'enableAlphaMask', v);
+        this._proxy?.onPropertyChanged(this, 'bloom.enableAlphaMask', v);
     }
 
     @property
@@ -92,7 +92,7 @@ export class BloomSettings implements BloomSettings {
     }
     set iterations(v: number) {
         this._iterations = v;
-        this._proxy?.onPropertyChanged(this, 'iterations', v);
+        this._proxy?.onPropertyChanged(this, 'bloom.iterations', v);
     }
 
     @property
@@ -103,7 +103,7 @@ export class BloomSettings implements BloomSettings {
     }
     set threshold(v: number) {
         this._threshold = v;
-        this._proxy?.onPropertyChanged(this, 'threshold', v);
+        this._proxy?.onPropertyChanged(this, 'bloom.threshold', v);
     }
 
     @property
@@ -114,7 +114,7 @@ export class BloomSettings implements BloomSettings {
     }
     set intensity(v: number) {
         this._intensity = v;
-        this._proxy?.onPropertyChanged(this, 'intensity', v);
+        this._proxy?.onPropertyChanged(this, 'bloom.intensity', v);
     }
 }
 
@@ -131,7 +131,7 @@ export class ColorGradingSettings implements ColorGradingSettings {
     }
     set enabled(v: boolean) {
         this._enabled = v;
-        this._proxy?.onPropertyChanged(this, 'enabled', v);
+        this._proxy?.onPropertyChanged(this, 'colorGrading.enabled', v);
     }
 
     @property({ type: Material })
@@ -142,7 +142,7 @@ export class ColorGradingSettings implements ColorGradingSettings {
     }
     set material(v: Material) {
         this._material = v;
-        this._proxy?.onPropertyChanged(this, 'material', v);
+        this._proxy?.onPropertyChanged(this, 'colorGrading.material', v);
     }
 
     @property
@@ -153,7 +153,7 @@ export class ColorGradingSettings implements ColorGradingSettings {
     }
     set contribute(v: number) {
         this._contribute = v;
-        this._proxy?.onPropertyChanged(this, 'contribute', v);
+        this._proxy?.onPropertyChanged(this, 'colorGrading.contribute', v);
     }
 
     @property({ type: Texture2D })
@@ -164,7 +164,7 @@ export class ColorGradingSettings implements ColorGradingSettings {
     }
     set colorGradingMap(v: Texture2D) {
         this._colorGradingMap = v;
-        this._proxy?.onPropertyChanged(this, 'colorGradingMap', v);
+        this._proxy?.onPropertyChanged(this, 'colorGrading.colorGradingMap', v);
     }
 }
 
@@ -181,7 +181,7 @@ export class FSRSettings implements FSRSettings {
     }
     set enabled(v: boolean) {
         this._enabled = v;
-        this._proxy?.onPropertyChanged(this, 'enabled', v);
+        this._proxy?.onPropertyChanged(this, 'fsr.enabled', v);
     }
 
     @property({ type: Material })
@@ -192,7 +192,7 @@ export class FSRSettings implements FSRSettings {
     }
     set material(v: Material) {
         this._material = v;
-        this._proxy?.onPropertyChanged(this, 'material', v);
+        this._proxy?.onPropertyChanged(this, 'fsr.material', v);
     }
 
     @property
@@ -203,7 +203,7 @@ export class FSRSettings implements FSRSettings {
     }
     set sharpness(v: number) {
         this._sharpness = v;
-        this._proxy?.onPropertyChanged(this, 'sharpness', v);
+        this._proxy?.onPropertyChanged(this, 'fsr.sharpness', v);
     }
 }
 
@@ -220,7 +220,7 @@ export class FXAASettings implements FXAASettings {
     }
     set enabled(v: boolean) {
         this._enabled = v;
-        this._proxy?.onPropertyChanged(this, 'enabled', v);
+        this._proxy?.onPropertyChanged(this, 'fxaa.enabled', v);
     }
 
     @property({ type: Material })
@@ -231,7 +231,7 @@ export class FXAASettings implements FXAASettings {
     }
     set material(v: Material) {
         this._material = v;
-        this._proxy?.onPropertyChanged(this, 'material', v);
+        this._proxy?.onPropertyChanged(this, 'fxaa.material', v);
     }
 }
 
@@ -248,7 +248,7 @@ export class ToneMappingSettings implements ToneMappingSettings {
     }
     set material(v: Material | null) {
         this._material = v;
-        this._proxy?.onPropertyChanged(this, 'material', v);
+        this._proxy?.onPropertyChanged(this, 'toneMapping.material', v);
     }
 }
 
@@ -259,8 +259,8 @@ export enum SSSQuality {
 }
 const SSSQualityEnum = Enum(SSSQuality);
 
-@ccclass('SkinSettings')
-export class SkinSettings implements ISkinSettings {
+@ccclass('SSSSettings')
+export class SSSSettings implements ISSSSettings {
     constructor(private _proxy: IPropertyNotifier) {
     }
 
@@ -272,28 +272,28 @@ export class SkinSettings implements ISkinSettings {
     }
     set enabled(v: boolean) {
         this._enabled = v;
-        this._proxy?.onPropertyChanged(this, 'enabled', v);
+        this._proxy?.onPropertyChanged(this, 'sss.enabled', v);
     }
 
     @property({ type: SSSQualityEnum })
-    private _sssQuality: SSSQuality = SSSQuality.High;
+    private _quality: SSSQuality = SSSQuality.High;
     @property({ type: SSSQualityEnum, tooltip: 'SSS blur quality' })
-    get sssQuality() {
-        return this._sssQuality;
+    get quality() {
+        return this._quality;
     }
-    set sssQuality(v: SSSQuality) {
-        this._sssQuality = v;
-        this._proxy?.onPropertyChanged(this, 'sssQuality', v);
+    set quality(v: SSSQuality) {
+        this._quality = v;
+        this._proxy?.onPropertyChanged(this, 'sss.quality', v);
     }
 
     @property({ type: Texture2D })
-    private _sssLutTexture: Texture2D | null = null;
+    private _lutTexture: Texture2D | null = null;
     @property({ type: Texture2D, tooltip: 'SSS LUT texture' })
-    get sssLutTexture() {
-        return this._sssLutTexture;
+    get lutTexture() {
+        return this._lutTexture;
     }
-    set sssLutTexture(v: Texture2D | null) {
-        this._sssLutTexture = v;
-        this._proxy?.onPropertyChanged(this, 'sssLutTexture', v);
+    set lutTexture(v: Texture2D | null) {
+        this._lutTexture = v;
+        this._proxy?.onPropertyChanged(this, 'sss.lutTexture', v);
     }
 }

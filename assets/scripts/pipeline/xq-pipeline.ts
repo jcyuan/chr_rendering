@@ -41,6 +41,7 @@ export class XQPipeline implements rendering.PipelineBuilder {
     private _clearColor = new gfx.Color();
     private _profileCamera: renderer.scene.Camera | null = null;
 
+    private _pipeline: rendering.BasicPipeline | null = null;
     private readonly _pipelineEvent = director.root.pipelineEvent;
 
     constructor() {
@@ -68,11 +69,28 @@ export class XQPipeline implements rendering.PipelineBuilder {
             this._settings = editorSettings ?? XQPipelineSettings.defaultSettings;
         } else
             this._settings = (camera.pipelineSettings as XQPipelineSettings) ?? XQPipelineSettings.defaultSettings;
-        
+
+        if (!this._settings.hasListeners('propertyChanged')) {
+            this._settings.on('propertyChanged', this._onSettingsPropertyChanged, this);
+            this._refreshSSSStatus();
+        }
+
         this._cameraInfo.reset(camera, this);
     }
 
+    private _onSettingsPropertyChanged(property: string, value: unknown): void {
+        if (property === 'sss.enabled')
+            this._refreshSSSStatus();
+    }
+
+    private _refreshSSSStatus(): void {
+        const enabled = this._settings.sss.enabled;
+        this._pipeline?.setMacroInt('USE_SSS', enabled ? 1 : 0);
+        director.root.onGlobalPipelineStateChanged();
+    }
+
     public windowResize(pipeline: rendering.BasicPipeline, window: renderer.RenderWindow, camera: renderer.scene.Camera, nativeWidth: number, nativeHeight: number): void {
+        this._pipeline = pipeline;
         _polyfillPPL(pipeline);
 
         this._features.reset(pipeline);
@@ -90,11 +108,18 @@ export class XQPipeline implements rendering.PipelineBuilder {
         return !!utilMat;
     }
 
+    private _setGlobalData(ppl: rendering.BasicPipeline): void {
+        // ppl.setVec4
+        
+    }
+
     public setup(cameras: renderer.scene.Camera[], ppl: rendering.BasicPipeline): void {
         if (!this._dependeiciesReady)
             return;
 
+        this._pipeline = ppl;
         _polyfillPPL(ppl);
+        this._setGlobalData(ppl);
         
         this._profileCamera = CameraInfo.decideProfilerCamera(cameras);
         

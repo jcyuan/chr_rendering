@@ -1,6 +1,7 @@
 import { _decorator, Camera, Component, rendering } from 'cc';
 import { EDITOR } from 'cc/env';
-import { BloomSettings, ColorGradingSettings, FSRSettings, FXAASettings, IPropertyNotifier, SkinSettings, ToneMappingSettings } from '../pipeline/pass-settings';
+import EventEmitter from 'eventemitter3';
+import { BloomSettings, ColorGradingSettings, FSRSettings, FXAASettings, IPropertyNotifier, SSSSettings, ToneMappingSettings } from '../pipeline/pass-settings';
 import { IPipelineSettings } from '../pipeline/xq-pipeline-types';
 const { ccclass, property, executeInEditMode, disallowMultiple, requireComponent } = _decorator;
 
@@ -9,6 +10,8 @@ const { ccclass, property, executeInEditMode, disallowMultiple, requireComponent
 @disallowMultiple
 @requireComponent(Camera)
 export class XQPipelineSettings extends Component implements IPipelineSettings, IPropertyNotifier {
+    private _event = new EventEmitter();
+
     private static _defaultSettings: XQPipelineSettings;
     static get defaultSettings(): XQPipelineSettings {
         if (!this._defaultSettings)
@@ -56,14 +59,15 @@ export class XQPipelineSettings extends Component implements IPipelineSettings, 
     @property({ type: ToneMappingSettings })
     toneMapping = new ToneMappingSettings(this);
 
-    @property({ type: SkinSettings })
-    skin = new SkinSettings(this);
+    @property({ type: SSSSettings })
+    sss = new SSSSettings(this);
     
     onPropertyChanged(target: any, property: string, value: any): void {
         if (EDITOR) {
             console.log('onPropertyChanged', target, property, value);
             this._tryEnableEditorPreview();
         }
+        this.emit('propertyChanged', property, value);
     }
     
     onEnable(): void {
@@ -109,5 +113,25 @@ export class XQPipelineSettings extends Component implements IPipelineSettings, 
         const current = rendering.getEditorPipelineSettings() as XQPipelineSettings | null;
         if (current === this)
             rendering.setEditorPipelineSettings(null);
+    }
+
+    on(type: string, listener: (...args: unknown[]) => void, thisObject?: any): void {
+        this._event.on(type, listener, thisObject);
+    }
+
+    emit(type: string, property: string, value: unknown): boolean {
+        return this._event.emit(type, property, value);
+    }
+    
+    off(type: string, listener: (property: string, value: unknown) => void, thisObject?: any): void {
+        this._event.off(type, listener, thisObject);
+    }
+
+    hasListeners(type: string): boolean {
+        return this._event.listenerCount(type) > 0;
+    }
+
+    once(type: string, listener: (property: string, value: unknown) => void, thisObject?: any): void {
+        this._event.once(type, listener, thisObject);
     }
 }

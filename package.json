@@ -3,5 +3,8 @@
   "uuid": "8be0c085-da87-4f26-86e2-5fd5e2eebe5c",
   "creator": {
     "version": "3.8.8"
+  },
+  "dependencies": {
+    "eventemitter3": "^5.0.4"
   }
 }
