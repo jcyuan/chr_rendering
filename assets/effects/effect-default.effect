@@ -192,6 +192,12 @@ CCProgram surface-vertex %{
   }
 */
 
+  #define CC_SURFACES_VERTEX_MODIFY_CLIP_POS
+  vec4 SurfacesVertexModifyClipPos(in SurfacesStandardVertexIntermediate In)
+  {
+    return applyJitter(In.clipPos);
+  }
+
   #define CC_SURFACES_VERTEX_MODIFY_UV
   void SurfacesVertexModifyUV(inout SurfacesStandardVertexIntermediate In)
   {
@@ -370,23 +376,13 @@ CCProgram surface-fragment %{
 
 CCProgram standard-vs %{
   precision highp float;
-
-  // 1. surface internal macros, for technique usage or remapping some user (material) macros to surface internal macros
   #include <macro-remapping>
   #include <surfaces/effect-macros/common-macros>
-
-  // 2. common include with corresponding shader stage, include before surface functions
   #include <surfaces/includes/common-vs>
-
-  // 3. user surface functions that can use user (effect) parameters (ubo Constants)
-  //    see surfaces/default-functions/xxx.chunk
   #include <shared-ubos>
+  #include <includes/jitter-vs>
   #include <surface-vertex>
-
-  // 4. surface include with corresponding shader stage and shading-model (optional)
   #include <surfaces/includes/standard-vs>
-
-  // 5. shader entry with corresponding shader stage and technique usage/type
   #include <shading-entries/main-functions/render-to-scene/vs>
 }%
 
@@ -396,6 +392,7 @@ CCProgram shadow-caster-vs %{
   #include <surfaces/effect-macros/render-to-shadowmap>
   #include <surfaces/includes/common-vs>
   #include <shared-ubos>
+  #include <includes/jitter-vs>
   #include <surface-vertex>
   #include <shading-entries/main-functions/render-to-shadowmap/vs>
 }%
@@ -406,6 +403,7 @@ CCProgram planar-shadow-vs %{
   #include <surfaces/effect-macros/render-planar-shadow>
   #include <surfaces/includes/common-vs>
   #include <shared-ubos>
+  #include <includes/jitter-vs>
   #include <surface-vertex>
   #include <shading-entries/main-functions/render-planar-shadow/vs>
 }%

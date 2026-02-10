@@ -4,6 +4,7 @@ import { PipelineBuilderBase } from './builder-base';
 import { CameraInfo } from "./camera-info";
 import { _polyfillPPL } from './polyfill';
 import { RenderingContext } from "./rendering-context";
+import { pipelineUtils } from "./utils";
 import { MainPassBuilder } from './xq-mainpass';
 import { XQPipelineFeatures } from './xq-pipeline-features';
 import { PostProcessPassBuilder } from './xq-postpass';
@@ -85,13 +86,14 @@ export class XQPipeline implements rendering.PipelineBuilder {
 
     private _refreshSSSStatus(): void {
         const enabled = this._settings.sss.enabled;
-        this._pipeline?.setMacroInt('USE_SSS', enabled ? 1 : 0);
+        this._pipeline?.setMacroInt('CC_USE_SSS', enabled ? 1 : 0);
         director.root.onGlobalPipelineStateChanged();
     }
 
     public windowResize(pipeline: rendering.BasicPipeline, window: renderer.RenderWindow, camera: renderer.scene.Camera, nativeWidth: number, nativeHeight: number): void {
         this._pipeline = pipeline;
         _polyfillPPL(pipeline);
+        pipelineUtils.jitter.reset();
 
         this._features.reset(pipeline);
         this._updateSettingsAndInfo(camera);
@@ -109,8 +111,8 @@ export class XQPipeline implements rendering.PipelineBuilder {
     }
 
     private _setGlobalData(ppl: rendering.BasicPipeline): void {
-        // ppl.setVec4
-        
+        pipelineUtils.jitter.update();
+        ppl.setVec4('jitterInfo', pipelineUtils.jitter.value);
     }
 
     public setup(cameras: renderer.scene.Camera[], ppl: rendering.BasicPipeline): void {

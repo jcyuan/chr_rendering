@@ -96,14 +96,18 @@ CCProgram ssss-blur-common %{
   #include <common/data/packing>
   #include <common/color/gamma>
   #include <common/math/coordinates>
+  #include <includes/noise>
 
   #define SSSS_KERNEL_SIZE 25
   #define SSSS_LUT_WIDTH 32.0
   #define SSSS_LUT_HEIGHT 16.0
   #define SSSS_DEPTH_DISCONTINUITY_THRESHOLD 0.05
   #define SSSS_MAX_SCALE 0.333
-
-  #define BLUENOISE_SEQUENCE vec3(0.06711056, 0.00583715, 52.9829189)
+  
+  #pragma rate JitterUBO pass
+  uniform JitterUBO {
+    vec4 jitterInfo;
+  };
 
   #pragma rate SSSBlurUBO pass
   uniform SSSBlurUBO {
@@ -183,9 +187,8 @@ CCProgram ssss-blur-common %{
 
     vec3 colorBlurred = color.rgb * sampleKernelLUT(kSize, 0, profile, qualityIndex, 0.0).rgb;
 
-    float rnd = fract(BLUENOISE_SEQUENCE.z * fract(dot(gl_FragCoord.xy + mod(cc_time.z, 12.0)
-                 * vec2(47.0, 17.0) * 0.695, BLUENOISE_SEQUENCE.xy)));
-
+    float rnd = ignNoise(gl_FragCoord.xy, jitterInfo.w);
+    
     for (int i = 1; i < SSSS_KERNEL_SIZE; i++) {
       if (i >= quality) break;
       

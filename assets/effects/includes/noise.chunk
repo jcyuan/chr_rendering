@@ -1,0 +1,13 @@
+#pragma once
+
+#define IGN_SEQUENCE vec3(0.06711056, 0.00583715, 52.9829189)
+
+float ignNoise(vec2 fragCoord, float frameMod) {
+    return fract(IGN_SEQUENCE.z * fract(dot(fragCoord.xy + frameMod * vec2(47.0, 17.0) * 0.695, IGN_SEQUENCE.xy)));
+}
+
+float rnd(vec2 fragCoord) {
+    vec3 p3 = fract(vec3(fragCoord.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 19.19);
+    return fract((p3.x + p3.y) * p3.z);
+}

@@ -71,6 +71,18 @@ export const pipelineUtils = {
         get value(): Readonly<Vec4> {
             return this._v4;
         },
+        update() {
+            const table = this._haltonTable;
+            const nextIndex = ((this._v4.w | 0) + 1) % table.length;
+            const sample = table[nextIndex];
+            this._v4.x = sample[0];
+            this._v4.y = sample[1];
+            this._v4.z = -this._v4.z;
+            this._v4.w = nextIndex;
+        },
+        reset() {
+            this._v4.set(0, 0, -1, 0);
+        },
     }
 };
 

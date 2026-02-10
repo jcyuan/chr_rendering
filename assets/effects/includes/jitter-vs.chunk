@@ -1,0 +1,11 @@
+#pragma once
+
+#pragma rate JitterUBO pass
+uniform JitterUBO {
+    vec4 jitterInfo;
+};
+
+vec4 applyJitter(vec4 clipPos) {
+    clipPos.xy += jitterInfo.xy * cc_screenSize.zw * clipPos.w;
+    return clipPos;
+}

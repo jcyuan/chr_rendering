@@ -53,6 +53,7 @@ CCProgram smoke-sky-vs %{
   precision highp float;
   #include <builtin/uniforms/cc-global>
   #include <builtin/uniforms/cc-local>
+  #include <includes/jitter-vs>
 
   in vec3 a_position;
   in vec2 a_texCoord;
@@ -63,7 +64,7 @@ CCProgram smoke-sky-vs %{
     v_uv = a_texCoord;
     vec4 clipPos = cc_matViewProj * cc_matWorld * vec4(a_position, 1.0);
     clipPos.z = clipPos.w;
-    return clipPos;
+    return applyJitter(clipPos);
   }
 }%
 

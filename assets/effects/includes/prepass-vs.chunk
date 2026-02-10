@@ -1,6 +1,7 @@
 precision highp float;
 #include <builtin/uniforms/cc-global>
 #include <builtin/uniforms/cc-local>
+#include <includes/jitter-vs>
 
 in vec3 a_position;
 
@@ -21,5 +22,5 @@ void main() {
 
     v_viewDepth = -viewPos.z;
 
-    gl_Position = cc_matProj * viewPos;
+    gl_Position = applyJitter(cc_matProj * viewPos);
 }

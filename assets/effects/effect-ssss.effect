@@ -113,11 +113,11 @@ CCProgram macro-remapping %{
   #pragma define-meta USE_DUAL_LOBE_SPECULAR
   #pragma define-meta USE_SUBSURFACE_MAP
   #pragma define-meta USE_THICKNESS_MAP
-  #pragma define-meta USE_SSS 1
-
+  
   #define CC_SURFACES_USE_SECOND_UV HAS_SECOND_UV
   #define CC_SURFACES_USE_TWO_SIDED USE_TWOSIDE
   #define CC_SURFACES_USE_VERTEX_COLOR USE_VERTEX_COLOR
+  #pragma CC_USE_SSS 1
 
   #define CC_SURFACES_LIGHTING_DUAL_LOBE_SPECULAR USE_DUAL_LOBE_SPECULAR
 
@@ -127,6 +127,12 @@ CCProgram macro-remapping %{
 }%
 
 CCProgram surface-vertex %{
+  #define CC_SURFACES_VERTEX_MODIFY_CLIP_POS
+  vec4 SurfacesVertexModifyClipPos(in SurfacesStandardVertexIntermediate In)
+  {
+    return applyJitter(In.clipPos);
+  }
+
   #define CC_SURFACES_VERTEX_MODIFY_UV
   void SurfacesVertexModifyUV(inout SurfacesStandardVertexIntermediate In)
   {
@@ -259,7 +265,7 @@ CCProgram surface-fragment %{
         result.environmentDiffuse = CalculateEnvironmentDiffuse(lightingData, cc_ambientSky.w);
       #endif
 
-      #if USE_SSS
+      #if CC_USE_SSS
         float thicknessFactor = max(0.00001, scatterParams.x) * (1.0 / dualLobeParams.z);
         float translucencyFactor = max(0.00001, scatterParams.y);
         float thickness = 0.0;
@@ -307,6 +313,7 @@ CCProgram standard-vs %{
   #include <surfaces/effect-macros/common-macros>
   #include <surfaces/includes/common-vs>
   #include <shared-ubos>
+  #include <includes/jitter-vs>
   #include <surface-vertex>
   #include <surfaces/includes/standard-vs>
   #include <shading-entries/main-functions/render-to-scene/vs>
@@ -318,6 +325,7 @@ CCProgram shadow-caster-vs %{
   #include <surfaces/effect-macros/render-to-shadowmap>
   #include <surfaces/includes/common-vs>
   #include <shared-ubos>
+  #include <includes/jitter-vs>
   #include <surface-vertex>
   #include <shading-entries/main-functions/render-to-shadowmap/vs>
 }%
