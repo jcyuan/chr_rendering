@@ -1,18 +1,6 @@
-import {
-    director,
-    Enum,
-    gfx,
-    NodeEventType,
-    renderer,
-    resources,
-    sys,
-    Texture2D,
-    Vec4,
-} from "cc";
+import { director, Enum, gfx, NodeEventType, renderer, resources, sys, Texture2D, Vec4, } from "cc";
 import { WindowInfo } from "./windowInfo";
 import { IPipelineSettings } from "./xq-pipeline-types";
-import { XQPipeline } from "./xq-pipeline";
-import { CameraInfo } from "./camera-info";
 
 export const pipelineUtils = {
     _repeatSampler: undefined as gfx.Sampler | undefined,
@@ -34,16 +22,6 @@ export const pipelineUtils = {
         return pipelineUtils._repeatSampler;
     },
 
-    needOffscreenRT(builder: XQPipeline, cameraInfo: CameraInfo) {
-        const settings = builder.settings;
-        const enableShadingScale = settings.enableShadingScale && cameraInfo.shadingScale !== 1;
-        const enableColorGrading = settings.colorGrading.enabled
-            && !!settings.colorGrading.material
-            && !!settings.colorGrading.colorGradingMap;
-        const needPostProcess = cameraInfo.HDREnabled || enableColorGrading || cameraInfo.SSSSEnabled;
-        return needPostProcess || enableShadingScale;
-    },
-    
     jitter: {
         _haltonTable: [
             [0.263385, -0.0252475],

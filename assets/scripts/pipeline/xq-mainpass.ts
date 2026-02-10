@@ -39,10 +39,7 @@ export class MainPassBuilder extends PipelineBuilderBase {
         const width = cameraInfo.width;
         const height = cameraInfo.height;
         const radianceFormat = cameraInfo.radianceFormat;
-
-        const needOffscreen = pipelineUtils.needOffscreenRT(builder, cameraInfo);
-        if (needOffscreen)
-            ppl.addRenderTarget(cameraInfo.radianceColor, radianceFormat, width, height);
+        ppl.addRenderTarget(cameraInfo.radianceColor, radianceFormat, width, height);
     }
 
     public setup(
@@ -55,8 +52,7 @@ export class MainPassBuilder extends PipelineBuilderBase {
     ): rendering.BasicRenderPassBuilder | undefined {
         this._tryAddReflectionProbePasses(ppl, cameraInfo, cameraInfo.mainLight, camera.scene);
 
-        const needOffscreen = pipelineUtils.needOffscreenRT(builder, cameraInfo);
-        context.colorName = needOffscreen ? cameraInfo.radianceColor : cameraInfo.windowColor;
+        context.colorName = cameraInfo.radianceColor;
 
         cameraInfo.fillClearColor(this._clearColor);
         cameraInfo.fillViewport(this._viewport);

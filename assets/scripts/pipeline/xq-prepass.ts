@@ -46,15 +46,13 @@ export class PrePassBuilder extends PipelineBuilderBase {
             rendering.ResourceResidency.MEMORYLESS
         );
 
-        if (pipelineUtils.needOffscreenRT(builder, cameraInfo)) {
-            ppl.addDepthStencil(
-                cameraInfo.depthStencil,
-                gfx.Format.DEPTH_STENCIL,
-                cameraInfo.width,
-                cameraInfo.height,
-                rendering.ResourceResidency.PERSISTENT
-            );
-        }
+        ppl.addDepthStencil(
+            cameraInfo.depthStencil,
+            gfx.Format.DEPTH_STENCIL,
+            cameraInfo.width,
+            cameraInfo.height,
+            rendering.ResourceResidency.PERSISTENT
+        );
     }
 
     public setup(
@@ -81,8 +79,7 @@ export class PrePassBuilder extends PipelineBuilderBase {
         pass.addQueue(QueueHint.OPAQUE, 'prepass')
             .addScene(camera, SceneFlags.OPAQUE | SceneFlags.MASK);
             
-        context.depthStencilName = pipelineUtils.needOffscreenRT(builder, cameraInfo)
-            ? cameraInfo.depthStencil : cameraInfo.windowDepthStencil;
+        context.depthStencilName = cameraInfo.depthStencil;
         
         return pass;
     }
