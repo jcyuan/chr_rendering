@@ -1,4 +1,4 @@
-import { _decorator, Enum, Material, Texture2D } from "cc";
+import { _decorator, Enum, Material, rendering, Texture2D } from "cc";
 import { IBloomSettings, IColorGradingSettings, IFSRSettings, IFXAASettings, ISSSSettings, IToneMappingSettings } from "./xq-pipeline-types";
 
 const { ccclass, property } = _decorator;
@@ -16,6 +16,11 @@ export interface IPropertyNotifier {
 export interface IPostEffectConfig {
     readonly willModifyScreenColor: boolean;
     readonly renderOrder: number;
+}
+
+export interface IPostEffectEntry {
+    config: IPostEffectConfig;
+    execute: (inputColor: string, outputColor: string, width: number, height: number) => rendering.BasicRenderPassBuilder;
 }
 
 @ccclass('BloomSettings')

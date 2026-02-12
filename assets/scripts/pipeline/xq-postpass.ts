@@ -1,7 +1,7 @@
 import { assert, builtinResMgr, gfx, Material, renderer, rendering, Vec2 } from "cc";
 import { PipelineBuilderBase } from "./builder-base";
 import { CameraInfo } from "./camera-info";
-import { IPostEffectConfig } from "./pass-settings";
+import { IPostEffectConfig, IPostEffectEntry } from "./pass-settings";
 import { RenderingContext } from "./rendering-context";
 import { XQPipeline } from "./xq-pipeline";
 import { XQPipelineSettings } from "../components/pipeline-settings";
@@ -9,11 +9,6 @@ import { TAAPassBuilder } from "./xq-taapass";
 
 const { LoadOp, StoreOp } = gfx;
 const { QueueHint } = rendering;
-
-interface PostEffectEntry {
-    config: IPostEffectConfig;
-    execute: (inputColor: string, outputColor: string, width: number, height: number) => rendering.BasicRenderPassBuilder;
-}
 
 export class PostProcessPassBuilder extends PipelineBuilderBase {
     public static readonly RenderOrder = 500;
@@ -43,6 +38,11 @@ export class PostProcessPassBuilder extends PipelineBuilderBase {
             cameraInfo.radianceFormat,
             cameraInfo.width, cameraInfo.height
         );
+        ppl.addRenderTarget(
+            cameraInfo.getTextureName('postLdrBuffer'),
+            gfx.Format.RGBA8,
+            cameraInfo.width, cameraInfo.height
+        );
         this._taa.windowResize(ppl, builder, cameraInfo, window, camera, nativeWidth, nativeHeight);
     }
 
@@ -64,14 +64,10 @@ export class PostProcessPassBuilder extends PipelineBuilderBase {
         const nw = cameraInfo.nativeWidth;
         const nh = cameraInfo.nativeHeight;
         const intermediateName = cameraInfo.getTextureName('postIntermediate');
+        const ldrIntermediateName = cameraInfo.getTextureName('postLdrBuffer');
 
-        const preEffects: PostEffectEntry[] = [];
-        const postEffects: PostEffectEntry[] = [];
-
-        const colorGradingEnabled = settings.colorGrading.enabled
-            && !!settings.colorGrading.material
-            && !!settings.colorGrading.colorGradingMap;
-        const toneMappingEnabled = cameraInfo.HDREnabled || colorGradingEnabled;
+        const preEffects: IPostEffectEntry[] = [];
+        const postEffects: IPostEffectEntry[] = [];
 
         if (settings.bloom.enabled && !!settings.bloom.material) {
             preEffects.push({
@@ -81,6 +77,10 @@ export class PostProcessPassBuilder extends PipelineBuilderBase {
             });
         }
 
+        const colorGradingEnabled = settings.colorGrading.enabled
+            && !!settings.colorGrading.material
+            && !!settings.colorGrading.colorGradingMap;
+        const toneMappingEnabled = cameraInfo.HDREnabled || colorGradingEnabled;
         if (toneMappingEnabled) {
             preEffects.push({
                 config: colorGradingEnabled ? settings.colorGrading : settings.toneMapping,
@@ -111,14 +111,14 @@ export class PostProcessPassBuilder extends PipelineBuilderBase {
         }
 
         context.colorName = currentColor;
-        const taaPass = this._taa.setup!(ppl, builder, cameraInfo, camera, context, lastPass);
+        const taaPass = this._taa.setup(ppl, builder, cameraInfo, camera, context, lastPass);
         if (taaPass)
             lastPass = taaPass;
-        currentColor = context.colorName!;
+        currentColor = context.colorName;
 
         for (const effect of postEffects) {
-            lastPass = effect.execute(currentColor, intermediateName, w, h);
-            currentColor = intermediateName;
+            lastPass = effect.execute(currentColor, ldrIntermediateName, w, h);
+            currentColor = ldrIntermediateName;
         }
 
         const fsrActive = settings.fsr.enabled && !!settings.fsr.material;
@@ -130,6 +130,7 @@ export class PostProcessPassBuilder extends PipelineBuilderBase {
         if (currentColor !== outputColorName)
             lastPass = this._blitPass(ppl, nw, nh, currentColor, outputColorName);
 
+        context.colorName = outputColorName;
         return lastPass;
     }
 
