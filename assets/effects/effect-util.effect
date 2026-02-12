@@ -262,27 +262,45 @@ CCProgram fs-taa-resolve %{
   #pragma rate depthInput pass
   uniform sampler2D depthInput;
 
-  float getLuminance(vec3 color) {
-    return dot(color, vec3(0.2126, 0.7152, 0.0722));
+  vec3 RGBToYCoCg(vec3 rgb) {
+    return vec3(
+      dot(rgb, vec3(0.25, 0.5, 0.25)),
+      dot(rgb, vec3(0.5, 0.0, -0.5)),
+      dot(rgb, vec3(-0.25, 0.5, -0.25))
+    );
+  }
+
+  vec3 YCoCgToRGB(vec3 ycocg) {
+    float tmp = ycocg.x - ycocg.z;
+    return vec3(tmp + ycocg.y, ycocg.x + ycocg.z, tmp - ycocg.y);
+  }
+
+  float HdrWeightY(float color, float exposure) {
+    return 1.0 / (color * exposure + 4.0);
+  }
+
+  vec2 WeightedLerpFactors(float weightA, float weightB, float blend) {
+    float blendA = (1.0 - blend) * weightA;
+    float blendB = blend * weightB;
+    float rcpBlend = 1.0 / (blendA + blendB);
+    return vec2(blendA * rcpBlend, blendB * rcpBlend);
   }
 
   float sampleDepth(vec2 uv) {
     vec4 depthSample = texture(depthInput, uv);
-    if (depthSample.w == 0.0)
-      return 0.0;
     return unpackDepth(depthSample.rg);
   }
 
   vec3 closestFragment(vec2 uv, vec2 texelSize) {
     float d;
-    vec2 size = 2.0 * texelSize;
-    vec3 dmin = vec3(0.0, 0.0, 0.0);
+    vec2 size = texelSize;
+    float cd = sampleDepth(uv);
+    vec3 dmin = vec3(0.0, 0.0, cd > 0.0 ? cd : 1.0);
 
-    dmin.z = sampleDepth(uv);
-    d = sampleDepth(uv + vec2(-size.x,  size.y)); if (d > dmin.z) dmin = vec3(-size.x,  size.y, d);
-    d = sampleDepth(uv + vec2( size.x,  size.y)); if (d > dmin.z) dmin = vec3( size.x,  size.y, d);
-    d = sampleDepth(uv + vec2(-size.x, -size.y)); if (d > dmin.z) dmin = vec3(-size.x, -size.y, d);
-    d = sampleDepth(uv + vec2( size.x, -size.y)); if (d > dmin.z) dmin = vec3( size.x, -size.y, d);
+    d = sampleDepth(uv + vec2(-size.x,  size.y)); if (d > 0.0 && d < dmin.z) dmin = vec3(-size.x,  size.y, d);
+    d = sampleDepth(uv + vec2( size.x,  size.y)); if (d > 0.0 && d < dmin.z) dmin = vec3( size.x,  size.y, d);
+    d = sampleDepth(uv + vec2(-size.x, -size.y)); if (d > 0.0 && d < dmin.z) dmin = vec3(-size.x, -size.y, d);
+    d = sampleDepth(uv + vec2( size.x, -size.y)); if (d > 0.0 && d < dmin.z) dmin = vec3( size.x, -size.y, d);
 
     return vec3(uv + dmin.xy, dmin.z);
   }
@@ -290,6 +308,7 @@ CCProgram fs-taa-resolve %{
   vec3 reconstructViewPos(vec2 uv, float linearDepth) {
     float viewZ = -(cc_nearFar.x + (cc_nearFar.y - cc_nearFar.x) * linearDepth);
     vec2 ndc = uv * 2.0 - 1.0;
+    ndc -= jitterInfo.xy * cc_screenSize.zw;
     float viewX = ndc.x * (-viewZ) / cc_matProj[0][0];
     float viewY = ndc.y * (-viewZ) / cc_matProj[1][1];
     return vec3(viewX, viewY, viewZ);
@@ -308,63 +327,63 @@ CCProgram fs-taa-resolve %{
     return 0.5 * (ndcCurrent - ndcPrev);
   }
 
-  vec4 clipAABB(vec4 aabbMin, vec4 aabbMax, vec4 color) {
-    const float eps = 0.00000001;
-    vec4 center = 0.5 * (aabbMax + aabbMin);
-    vec4 extents = 0.5 * (aabbMax - aabbMin) + eps;
-    vec4 offset = color - center;
-    vec4 ts = abs(offset / extents);
-    float t = max(max(ts.r, ts.g), max(ts.b, ts.a));
+  vec3 clipAABB(vec3 aabbMin, vec3 aabbMax, vec3 color) {
+    vec3 center = 0.5 * (aabbMax + aabbMin);
+    vec3 extents = 0.5 * (aabbMax - aabbMin) + 1e-8;
+    vec3 offset = color - center;
+    vec3 ts = abs(offset / extents);
+    float t = max(ts.x, max(ts.y, ts.z));
     return center + offset / max(1.0, t);
   }
 
   vec4 taaResolve(vec2 ssVel, vec2 texelSize) {
     vec2 uv = getScreenUV();
 
-    vec4 tl = texture(currentInput, uv + vec2(-texelSize.x,  texelSize.y));
-    vec4 t  = texture(currentInput, uv + vec2(         0.0,  texelSize.y));
-    vec4 tr = texture(currentInput, uv + vec2( texelSize.x,  texelSize.y));
+    vec3 tl = RGBToYCoCg(texture(currentInput, uv + vec2(-texelSize.x,  texelSize.y)).rgb);
+    vec3 t  = RGBToYCoCg(texture(currentInput, uv + vec2(         0.0,  texelSize.y)).rgb);
+    vec3 tr = RGBToYCoCg(texture(currentInput, uv + vec2( texelSize.x,  texelSize.y)).rgb);
+    vec3 ml = RGBToYCoCg(texture(currentInput, uv + vec2(-texelSize.x, 0.0)).rgb);
+    vec3 m  = RGBToYCoCg(texture(currentInput, uv).rgb);
+    vec3 mr = RGBToYCoCg(texture(currentInput, uv + vec2( texelSize.x, 0.0)).rgb);
+    vec3 bl = RGBToYCoCg(texture(currentInput, uv + vec2(-texelSize.x, -texelSize.y)).rgb);
+    vec3 b  = RGBToYCoCg(texture(currentInput, uv + vec2(         0.0, -texelSize.y)).rgb);
+    vec3 br = RGBToYCoCg(texture(currentInput, uv + vec2( texelSize.x, -texelSize.y)).rgb);
 
-    vec4 ml = texture(currentInput, uv + vec2(-texelSize.x, 0.0));
-    vec4 m  = texture(currentInput, uv);
-    vec4 mr = texture(currentInput, uv + vec2( texelSize.x, 0.0));
+    vec3 cornerSum = 2.0 * (tr + bl + br + tl) - 2.0 * m;
+    m += (m - (cornerSum * 0.166667)) * 2.718282 * 0.3;
+    m.x = max(0.0, m.x);
 
-    vec4 bl = texture(currentInput, uv + vec2(-texelSize.x, -texelSize.y));
-    vec4 b  = texture(currentInput, uv + vec2(         0.0, -texelSize.y));
-    vec4 br = texture(currentInput, uv + vec2( texelSize.x, -texelSize.y));
+    vec3 cmin5 = min(mr, min(m, min(ml, min(t, b))));
+    vec3 cmin = min(cmin5, min(tl, min(tr, min(bl, br))));
 
-    vec4 corners = 2.0 * (tr + bl + br + tl) - 2.0 * m;
-    m += (m - (corners * 0.166667)) * 2.718282 * 0.3;
-    m = max(vec4(0.0), m);
-
-    vec4 cmin5 = min(mr, min(m, min(ml, min(t, b))));
-    vec4 cmin = min(cmin5, min(tl, min(tr, min(bl, br))));
-
-    vec4 cmax5 = max(mr, max(m, max(ml, max(t, b))));
-    vec4 cmax = max(cmax5, max(tl, max(tr, max(bl, br))));
+    vec3 cmax5 = max(mr, max(m, max(ml, max(t, b))));
+    vec3 cmax = max(cmax5, max(tl, max(tr, max(bl, br))));
 
     cmin = 0.5 * (cmin + cmin5);
     cmax = 0.5 * (cmax + cmax5);
 
-    vec4 previousColor = texture(historyInput, uv - ssVel);
-    previousColor = clipAABB(cmin, cmax, previousColor);
+    vec3 prevColor = RGBToYCoCg(texture(historyInput, uv - ssVel).rgb);
+    prevColor = clipAABB(cmin, cmax, prevColor);
 
-    float lum0 = getLuminance(m.rgb);
-    float lum1 = getLuminance(previousColor.rgb);
+    float lum0 = m.x * 0.25;
+    float lum1 = prevColor.x * 0.25;
     float diff = abs(lum0 - lum1) / max(lum0, max(lum1, 0.2));
     float unbiasedWeight = 1.0 - diff;
-    // feedback = (1 - 1/8.3), (1 - 1/33.5)
     float feedback = mix(0.88, 0.97, unbiasedWeight * unbiasedWeight);
 
-    return mix(m, previousColor, feedback);
+    float currentWeight = HdrWeightY(m.x, 1.0);
+    float historyWeight = HdrWeightY(prevColor.x, 1.0);
+    vec2 weights = WeightedLerpFactors(historyWeight, currentWeight, 1.0 - feedback);
+    vec3 result = prevColor * weights.x + m * weights.y;
+
+    return vec4(YCoCgToRGB(result), 1.0);
   }
 
   vec4 superSample() {
     vec2 uv = getScreenUV();
-    vec4 current = texture(currentInput, uv);
-    vec4 history = texture(historyInput, uv);
-    float blendFactor = taaParams.y;
-    return mix(current, history, 1.0 - blendFactor);
+    vec3 current = texture(currentInput, uv).rgb;
+    vec3 history = texture(historyInput, uv).rgb;
+    return vec4(mix(current, history, 0.95), 1.0);
   }
 
   layout(location = 0) out vec4 fragColor;
@@ -374,27 +393,15 @@ CCProgram fs-taa-resolve %{
     float mode = taaParams.x;
 
     if (mode == TAA_MODE_FIRST) {
-      fragColor = texture(currentInput, uv);
-      return;
-    }
-
-    if (mode == TAA_MODE_SSAA) {
+      fragColor = vec4(texture(currentInput, uv).rgb, 1.0);
+    } else if (mode == TAA_MODE_SSAA) {
       fragColor = superSample();
-      return;
+    } else {
+      vec2 texelSize = cc_screenSize.zw;
+      vec3 closest = closestFragment(uv, texelSize);
+      vec3 viewPos = reconstructViewPos(closest.xy, closest.z);
+      vec2 ssVel = computeSSVelocity(closest.xy, viewPos);
+      fragColor = taaResolve(ssVel, texelSize);
     }
-
-    vec2 texelSize = cc_screenSize.zw;
-    vec3 closest = closestFragment(uv, texelSize);
-
-    if (closest.z == 0.0) {
-      vec2 unjitteredUV = uv - jitterInfo.xy * texelSize * 0.5;
-      fragColor = texture(currentInput, unjitteredUV);
-      return;
-    }
-
-    vec3 viewPos = reconstructViewPos(closest.xy, closest.z);
-    vec2 ssVel = computeSSVelocity(closest.xy, viewPos);
-
-    fragColor = taaResolve(ssVel, texelSize);
   }
 }%

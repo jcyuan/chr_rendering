@@ -1,0 +1,35 @@
+#pragma once
+
+#pragma rate JitterUBO pass
+uniform JitterUBO {
+    vec4 jitterInfo;
+};
+
+#include <includes/noise>
+
+void alphaClip(float alpha, float threshold) {
+  #if USE_ALPHA_TEST
+    #if USE_THIN_LAYER
+      float noise = rnd(gl_FragCoord.xy + jitterInfo.xy * 1000.0 + gl_FragCoord.z);
+    #else
+      float linZ = (1.0 / gl_FragCoord.w - cc_nearFar.x) / (cc_nearFar.y - cc_nearFar.x);
+      float sliceZ = floor(linZ * 500.0) / 500.0;
+      float noise = ignNoise(gl_FragCoord.xy + sliceZ, jitterInfo.w);
+    #endif
+    // discard transparent area first, then discard the remaining area randomly
+    if (alpha < threshold) discard;
+    float normalizedAlpha = (alpha - threshold) / (1.0 - threshold);
+    if (normalizedAlpha < noise) discard;
+  #endif
+}
+
+void taaAlphaClip(float alpha, float threshold, vec4 clipPos, vec2 screenRes) {
+  #if USE_ALPHA_TEST
+    // can not be floor or ceil
+    vec2 screenPos = (clipPos.xy / clipPos.w * 0.5 + vec2(0.5)) * floor(screenRes);
+    float dither5 = fract((screenPos.x + screenPos.y * 2.0 - 1.5 + jitterInfo.w) / 5.0);
+    float noiseValue = fract(dot(vec2(171.0, 231.0) / 71.0, screenPos.xy));
+    float dither = (dither5 * 5.0 + noiseValue) * 0.166666667;  // (1.0 / 6.0);
+    if(alpha + dither < threshold) discard;
+  #endif
+}

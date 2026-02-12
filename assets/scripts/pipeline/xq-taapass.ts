@@ -4,6 +4,7 @@ import { CameraInfo } from "./camera-info";
 import { RenderingContext } from "./rendering-context";
 import { pipelineUtils } from "./utils";
 import { XQPipeline } from "./xq-pipeline";
+import { EDITOR } from "cc/env";
 
 const { LoadOp, StoreOp } = gfx;
 const { QueueHint, ResourceResidency } = rendering;
@@ -27,8 +28,7 @@ export class TAAPassBuilder extends PipelineBuilderBase {
     private _motionCol2 = new Vec4();
     private _motionCol3 = new Vec4();
     private _staticFrameCount = 0;
-    private _firstFrame = true;
-    private _initialized = false;
+    private _initFrames = 0;
 
     public getConfigOrder(): number {
         return 0;
@@ -47,7 +47,10 @@ export class TAAPassBuilder extends PipelineBuilderBase {
         _nativeWidth: number,
         _nativeHeight: number
     ): void {
-        const format = cameraInfo.radianceFormat;
+        if (EDITOR)
+            return;
+
+        const format = gfx.Format.RGBA8;
         const w = cameraInfo.width;
         const h = cameraInfo.height;
 
@@ -63,9 +66,12 @@ export class TAAPassBuilder extends PipelineBuilderBase {
             ResourceResidency.PERSISTENT
         );
 
-        this._firstFrame = true;
+        this.reset();
+    }
+
+    public reset(): void {
+        this._initFrames = 0;
         this._staticFrameCount = 0;
-        this._initialized = true;
     }
 
     public setup(
@@ -76,29 +82,32 @@ export class TAAPassBuilder extends PipelineBuilderBase {
         context: RenderingContext,
         _prevRenderPass?: rendering.BasicRenderPassBuilder
     ): rendering.BasicRenderPassBuilder | undefined {
-        if (!this._initialized)
+        if (EDITOR)
             return undefined;
-
+        
         const utilMtl = builtinResMgr.get<Material>('utilMtl');
         assert(!!utilMtl, 'utilMtl is required for TAA pass');
 
         const jitterValue = pipelineUtils.jitter.value;
-        const pingPong = jitterValue.z > 0;
-        const readFrame = cameraInfo.getTextureName(pingPong ? 'taaFrame0' : 'taaFrame1');
-        const writeFrame = cameraInfo.getTextureName(pingPong ? 'taaFrame1' : 'taaFrame0');
+        const switchFlag = jitterValue.z > 0;
+        const frame0 = cameraInfo.getTextureName('taaFrame0');
+        const frame1 = cameraInfo.getTextureName('taaFrame1');
+        const readFrame = switchFlag ? frame0 : frame1;
+        const writeFrame = switchFlag ? frame1 : frame0;
 
         let mode: TAAMode;
-        if (this._firstFrame) {
+        const isInit = this._initFrames < 2;
+        if (isInit) {
             mode = TAAMode.First;
-            this._firstFrame = false;
-            this._staticFrameCount = 1;
+            this._initFrames++;
+            this._staticFrameCount = 0;
         } else {
             if (Mat4.equals(camera.matViewProj, this._prevViewProj)) {
                 mode = TAAMode.SSAA;
                 this._staticFrameCount++;
             } else {
                 mode = TAAMode.TAA;
-                this._staticFrameCount = 1;
+                this._staticFrameCount = 0;
             }
         }
 
@@ -113,13 +122,25 @@ export class TAAPassBuilder extends PipelineBuilderBase {
         this._taaParams.x = mode;
         this._taaParams.y = 1.0 / Math.max(this._staticFrameCount, 1);
 
-        const pass = ppl.addRenderPass(cameraInfo.width, cameraInfo.height, 'taa-resolve');
+        const w = cameraInfo.width;
+        const h = cameraInfo.height;
+
+        if (isInit) {
+            const initPass = ppl.addRenderPass(w, h, 'screen-blit');
+            initPass.name = 'taaInitHistory';
+            initPass.addRenderTarget(readFrame, LoadOp.DISCARD, StoreOp.STORE);
+            initPass.addTexture(context.colorName, 'inputTexture');
+            initPass.addQueue(QueueHint.NONE).addFullscreenQuad(utilMtl, 1);
+        }
+
+        const pass = ppl.addRenderPass(w, h, 'taa-resolve');
         pass.name = 'taaResolve';
         pass.addRenderTarget(writeFrame, LoadOp.DISCARD, StoreOp.STORE);
         pass.addTexture(context.colorName, 'currentInput');
         pass.addTexture(readFrame, 'historyInput');
         pass.addTexture(cameraInfo.sceneDepthPacked, 'depthInput');
 
+        pass.setVec4('jitterInfo', jitterValue);
         pass.setVec4('taaMotion0', this._motionCol0);
         pass.setVec4('taaMotion1', this._motionCol1);
         pass.setVec4('taaMotion2', this._motionCol2);
