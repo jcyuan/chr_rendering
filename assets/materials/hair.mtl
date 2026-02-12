@@ -1,0 +1,125 @@
+{
+  "__type__": "cc.Material",
+  "_name": "",
+  "_objFlags": 0,
+  "__editorExtras__": {},
+  "_native": "",
+  "_effectAsset": {
+    "__uuid__": "900afa54-0d29-431c-99d2-b02d64aa7f0b",
+    "__expectedType__": "cc.EffectAsset"
+  },
+  "_techIdx": 0,
+  "_defines": [
+    {
+      "USE_TWOSIDE": true,
+      "USE_HIGH_QUALITY_REFLECTION": true,
+      "USE_NORMAL_MAP": true,
+      "USE_PBR_MAP": true,
+      "USE_ALPHA_TEST": true,
+      "USE_HAIR_MAP": true,
+      "USE_TAA_JITTER": true
+    },
+    {},
+    {},
+    {},
+    {}
+  ],
+  "_states": [
+    {
+      "rasterizerState": {},
+      "depthStencilState": {},
+      "blendState": {
+        "targets": [
+          {}
+        ]
+      }
+    },
+    {
+      "rasterizerState": {},
+      "depthStencilState": {},
+      "blendState": {
+        "targets": [
+          {}
+        ]
+      }
+    },
+    {
+      "rasterizerState": {},
+      "depthStencilState": {},
+      "blendState": {
+        "targets": [
+          {}
+        ]
+      }
+    },
+    {
+      "rasterizerState": {},
+      "depthStencilState": {},
+      "blendState": {
+        "targets": [
+          {}
+        ]
+      }
+    },
+    {
+      "rasterizerState": {},
+      "depthStencilState": {},
+      "blendState": {
+        "targets": [
+          {}
+        ]
+      }
+    }
+  ],
+  "_props": [
+    {
+      "mainColor": {
+        "__type__": "cc.Color",
+        "r": 247,
+        "g": 247,
+        "b": 247,
+        "a": 255
+      },
+      "alphaThreshold": 1,
+      "occlusion": 0.499,
+      "specularIntensity": 0.01,
+      "normalStrength": 0.5,
+      "anisotropyShape": 0.5,
+      "anisotropyRotation": 0.5022,
+      "normalMap": {
+        "__uuid__": "4687204c-038f-4097-81e5-4f7179aba674@3c318",
+        "__expectedType__": "cc.Texture2D"
+      },
+      "pbrMap": {
+        "__uuid__": "1dbb407d-e048-4ba7-ba64-5b971d51506f@6c48a",
+        "__expectedType__": "cc.Texture2D"
+      },
+      "roughnessTRT": 0,
+      "offsetTRT": -0.003,
+      "IntensityTRT": 10,
+      "baseColorTRT": {
+        "__type__": "cc.Color",
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "ScatterCoefTT": 1,
+      "baseColorTT": {
+        "__type__": "cc.Color",
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "hairMap": {
+        "__uuid__": "bc74f8c1-73d3-4af8-8aa9-2d6bebf51a5f@6c48a",
+        "__expectedType__": "cc.Texture2D"
+      }
+    },
+    {},
+    {},
+    {},
+    {}
+  ]
+}
