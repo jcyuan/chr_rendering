@@ -6,16 +6,32 @@ precision highp float;
     uniform sampler2D subsurfaceMap;
     in vec2 v_uv;
 #endif
+
 in float v_viewDepth;
 
 uniform DefaultConstants {
+    vec4 alphaTestParams; // x: scaleFactor, y: threshold, z: unused, w: unused
     vec4 scatterParams;   // x: thicknessFactor, y: translucencyFactor, z: scatteringProfile, w: scatteringFactor
     vec4 dualLobeParams;  // x: dualLobeRoughness, y: unused, z: modelExtent, w: dualLobeIntensity
 };
 
+#include <includes/jitter-fs>
+
+#if USE_ALPHA_TEST && USE_TAA_JITTER
+    in vec4 v_clipPos;
+#endif
+
 layout(location = 0) out vec4 fragColor;
 
 void main() {
+    #if USE_ALPHA_TEST
+        #if USE_TAA_JITTER
+            taaAlphaClip(alphaTestParams.x, alphaTestParams.y, v_clipPos, cc_viewPort.zw);
+        #else
+            alphaClip(alphaTestParams.x, 1.0 - alphaTestParams.y);
+        #endif
+    #endif
+
     highp float depth = (v_viewDepth - cc_nearFar.x) / (cc_nearFar.y - cc_nearFar.x);
     vec2 packedDepth = packDepth(depth);
 
