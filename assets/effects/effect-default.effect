@@ -45,7 +45,6 @@ CCEffect %{
       depthStencilState:
         depthTest: true
         depthWrite: false
-      cullMode: None
       blendState:
         targets:
         - blend: true

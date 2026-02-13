@@ -31,8 +31,6 @@ CCEffect %{
         selfShadowMap:                    { value: white, editor: { parent: USE_SELF_SHADOW_MAP } }
         # r = transparency, g = anisotropy factor, b = anisotropy rotation factor
         hairMap:                          { value: white, editor: { parent: USE_HAIR_MAP } }
-      rasterizerState:
-        cullMode: None
       depthStencilState:
         depthFunc: less_equal
         depthTest: true
@@ -43,8 +41,6 @@ CCEffect %{
       phase: prepass
       embeddedMacros: { CC_SURFACES_LIGHTING_DISABLE_DIFFUSE: true, CC_SURFACES_LIGHTING_DISABLE_SPECULAR: true }
       propertyIndex: 0
-      rasterizerState:
-        cullMode: None
       depthStencilState:
         depthFunc: less_equal
         depthTest: true
