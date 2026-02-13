@@ -20,6 +20,7 @@
     {},
     {},
     {},
+    {},
     {}
   ],
   "_states": [
@@ -33,9 +34,17 @@
           {
             "blend": true,
             "blendSrc": 2,
-            "blendDst": 4,
-            "blendDstAlpha": 4
+            "blendDst": 4
           }
+        ]
+      }
+    },
+    {
+      "rasterizerState": {},
+      "depthStencilState": {},
+      "blendState": {
+        "targets": [
+          {}
         ]
       }
     },
@@ -96,9 +105,8 @@
   ],
   "_props": [
     {
-      "occlusion": 0.3,
-      "roughness": 0,
-      "specularIntensity": 0,
+      "roughness": 0.2,
+      "normalStrength": 0.5,
       "mainTexture": {
         "__uuid__": "b0c996c6-12a5-4204-a886-06fbe909044d@6c48a",
         "__expectedType__": "cc.Texture2D"
@@ -112,6 +120,7 @@
         "__expectedType__": "cc.Texture2D"
       }
     },
+    {},
     {},
     {},
     {},

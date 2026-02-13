@@ -79,7 +79,7 @@ CCEffect %{
 
     - vert: standard-vs
       frag: standard-fs
-      phase: specular-pass
+      phase: ssss-specular
       propertyIndex: 0
       embeddedMacros: { CC_DRAW_DIFFUSE: false, CC_DRAW_SPECULAR: true, CC_SURFACES_LIGHTING_DISABLE_DIFFUSE: true, CC_SURFACES_LIGHTING_DISABLE_SPECULAR: true }
       depthStencilState:

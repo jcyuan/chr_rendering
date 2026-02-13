@@ -116,12 +116,18 @@ export class SSSPassBuilder extends PipelineBuilderBase {
         }
         
         const specularPass = ppl.addRenderPass(this._viewport.width, this._viewport.height, 'default');
-        specularPass.name = 'sssSpecular';
+        specularPass.name = 'postSSSS';
         specularPass.setViewport(this._viewport);
         specularPass.addRenderTarget(context.colorName, LoadOp.LOAD, StoreOp.STORE);
         specularPass.addDepthStencil(context.depthStencilName, LoadOp.LOAD, StoreOp.DISCARD);
-        const specularQueue = specularPass.addQueue(QueueHint.BLEND, 'specular-pass');
-        specularQueue.addScene(
+        if (cameraInfo.mainLightShadowMapEnabled)
+            specularPass.addTexture(cameraInfo.shadowMap, 'cc_shadowMap');
+        specularPass.addQueue(QueueHint.BLEND, 'ssss-specular').addScene(
+            camera,
+            SceneFlags.BLEND,
+            cameraInfo.mainLight
+        );
+        specularPass.addQueue(QueueHint.BLEND, 'translucent').addScene(
             camera,
             SceneFlags.BLEND,
             cameraInfo.mainLight

@@ -66,8 +66,8 @@ export class MainPassBuilder extends PipelineBuilderBase {
                         );
         }
         
-        const sceneFlags = SceneFlags.BLEND | (camera.geometryRenderer ? SceneFlags.GEOMETRY : SceneFlags.NONE);
-        pass.addQueue(QueueHint.BLEND).addScene(camera, sceneFlags, cameraInfo.mainLight);
+        if (camera.geometryRenderer)
+            pass.addQueue(QueueHint.BLEND).addScene(camera, SceneFlags.GEOMETRY, cameraInfo.mainLight);
         
         return pass;
     }
