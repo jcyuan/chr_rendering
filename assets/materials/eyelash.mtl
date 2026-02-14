@@ -5,19 +5,15 @@
   "__editorExtras__": {},
   "_native": "",
   "_effectAsset": {
-    "__uuid__": "e4c829ea-8115-4171-991b-28c0f44f4348",
+    "__uuid__": "41c98080-e327-40b9-934b-e10cf1726bf0",
     "__expectedType__": "cc.EffectAsset"
   },
   "_techIdx": 0,
   "_defines": [
     {
-      "USE_NORMAL_MAP": true,
       "USE_ALBEDO_MAP": true,
       "USE_PBR_MAP": true
     },
-    {},
-    {},
-    {},
     {},
     {},
     {},
@@ -31,21 +27,6 @@
       "depthStencilState": {},
       "blendState": {
         "targets": [
-          {
-            "blend": true,
-            "blendSrc": 2,
-            "blendDst": 4
-          }
-        ]
-      }
-    },
-    {
-      "rasterizerState": {
-        "cullMode": 0
-      },
-      "depthStencilState": {},
-      "blendState": {
-        "targets": [
           {}
         ]
       }
@@ -62,45 +43,27 @@
       }
     },
     {
-      "rasterizerState": {},
-      "depthStencilState": {},
-      "blendState": {
-        "targets": [
-          {}
-        ]
-      }
-    },
-    {
-      "rasterizerState": {},
-      "depthStencilState": {},
-      "blendState": {
-        "targets": [
-          {}
-        ]
-      }
-    },
-    {
-      "rasterizerState": {},
-      "depthStencilState": {},
-      "blendState": {
-        "targets": [
-          {}
-        ]
-      }
-    },
-    {
-      "rasterizerState": {},
-      "depthStencilState": {},
-      "blendState": {
-        "targets": [
-          {}
-        ]
-      }
-    },
-    {
       "rasterizerState": {
         "cullMode": 0
       },
+      "depthStencilState": {},
+      "blendState": {
+        "targets": [
+          {}
+        ]
+      }
+    },
+    {
+      "rasterizerState": {},
+      "depthStencilState": {},
+      "blendState": {
+        "targets": [
+          {}
+        ]
+      }
+    },
+    {
+      "rasterizerState": {},
       "depthStencilState": {},
       "blendState": {
         "targets": [
@@ -111,24 +74,18 @@
   ],
   "_props": [
     {
-      "roughness": 0.2,
-      "normalStrength": 0.5,
+      "roughness": 0,
+      "specularIntensity": 0.665,
+      "normalStrength": 0,
       "mainTexture": {
         "__uuid__": "b0c996c6-12a5-4204-a886-06fbe909044d@6c48a",
         "__expectedType__": "cc.Texture2D"
       },
-      "normalMap": {
-        "__uuid__": "fe1ef9c7-1088-4377-a78c-168b7a164b04@3c318",
-        "__expectedType__": "cc.Texture2D"
-      },
       "pbrMap": {
-        "__uuid__": "5ed91c78-5362-497b-b351-66fe576d515a@6c48a",
+        "__uuid__": "5daa576f-f874-4f13-8d64-9a0b1fd7ccab@6c48a",
         "__expectedType__": "cc.Texture2D"
       }
     },
-    {},
-    {},
-    {},
     {},
     {},
     {},

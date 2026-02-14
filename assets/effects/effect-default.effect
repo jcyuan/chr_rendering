@@ -38,20 +38,6 @@ CCEffect %{
         depthTest: true
         depthWrite: true
 
-    - vert: standard-vs
-      frag: standard-fs
-      phase: translucent
-      propertyIndex: 0
-      depthStencilState:
-        depthTest: true
-        depthWrite: false
-      blendState:
-        targets:
-        - blend: true
-          blendSrc: src_alpha
-          blendDst: one_minus_src_alpha
-          blendDstAlpha: one_minus_src_alpha
-
     - &forward-add
       vert: standard-vs
       frag: standard-fs
@@ -167,10 +153,7 @@ CCProgram macro-remapping %{
   #define CC_SURFACES_USE_TWO_SIDED USE_TWOSIDE
   #define CC_SURFACES_LIGHTING_ANISOTROPIC IS_ANISOTROPY
   #define CC_SURFACES_USE_VERTEX_COLOR USE_VERTEX_COLOR
-
-#if USE_TAA_JITTER
   #define CC_SURFACES_TRANSFER_CLIP_POS 1
-#endif
 
 #if IS_ANISOTROPY || USE_NORMAL_MAP
   #define CC_SURFACES_USE_TANGENT_SPACE 1
