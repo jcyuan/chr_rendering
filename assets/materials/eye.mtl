@@ -1,0 +1,113 @@
+{
+  "__type__": "cc.Material",
+  "_name": "",
+  "_objFlags": 0,
+  "__editorExtras__": {},
+  "_native": "",
+  "_effectAsset": {
+    "__uuid__": "f0475923-826e-45dc-85cc-b5d9c2b220e9",
+    "__expectedType__": "cc.EffectAsset"
+  },
+  "_techIdx": 0,
+  "_defines": [
+    {
+      "USE_IRIS_CAUSTICS": true
+    },
+    {},
+    {},
+    {},
+    {}
+  ],
+  "_states": [
+    {
+      "rasterizerState": {},
+      "depthStencilState": {},
+      "blendState": {
+        "targets": [
+          {}
+        ]
+      }
+    },
+    {
+      "rasterizerState": {},
+      "depthStencilState": {},
+      "blendState": {
+        "targets": [
+          {}
+        ]
+      }
+    },
+    {
+      "rasterizerState": {},
+      "depthStencilState": {},
+      "blendState": {
+        "targets": [
+          {}
+        ]
+      }
+    },
+    {
+      "rasterizerState": {},
+      "depthStencilState": {},
+      "blendState": {
+        "targets": [
+          {}
+        ]
+      }
+    },
+    {
+      "rasterizerState": {},
+      "depthStencilState": {},
+      "blendState": {
+        "targets": [
+          {}
+        ]
+      }
+    }
+  ],
+  "_props": [
+    {
+      "occlusion": 0.69,
+      "roughness": 0,
+      "specularIntensity": 0.368,
+      "mainTexture": {
+        "__uuid__": "c2606248-65e1-4ca5-9f51-5edfca982081@6c48a",
+        "__expectedType__": "cc.Texture2D"
+      },
+      "irisGradientMap": {
+        "__uuid__": "6ba85702-92d1-4bf9-bc51-20e91723869c@6c48a",
+        "__expectedType__": "cc.Texture2D"
+      },
+      "irisColorMaskMap": {
+        "__uuid__": "ac3ea641-a51b-4779-92c7-28869303d7be@6c48a",
+        "__expectedType__": "cc.Texture2D"
+      },
+      "veinsColorMap": {
+        "__uuid__": "6ee20da0-3ca9-4d9c-9ee7-f4e711ae5155@6c48a",
+        "__expectedType__": "cc.Texture2D"
+      },
+      "irisHeightMap": {
+        "__uuid__": "ac3ea641-a51b-4779-92c7-28869303d7be@6c48a",
+        "__expectedType__": "cc.Texture2D"
+      },
+      "irisHeightMapAlpha": {
+        "__uuid__": "ac3ea641-a51b-4779-92c7-28869303d7be@6c48a",
+        "__expectedType__": "cc.Texture2D"
+      },
+      "irisScale": 0,
+      "veinsBleeding": 1.462,
+      "irisMainColor": 1,
+      "irisMainBright": 5,
+      "irisEdgeColor": 0.892,
+      "irisEdgeBright": 0.83,
+      "reflectionEnhancement": 1.487,
+      "causticsPosition": 1,
+      "causticsWidth": 0.422,
+      "causticsIntensity": 3
+    },
+    {},
+    {},
+    {},
+    {}
+  ]
+}
