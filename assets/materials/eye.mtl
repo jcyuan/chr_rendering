@@ -5,15 +5,18 @@
   "__editorExtras__": {},
   "_native": "",
   "_effectAsset": {
-    "__uuid__": "f0475923-826e-45dc-85cc-b5d9c2b220e9",
+    "__uuid__": "d481d51a-548d-47ab-8946-1148f0d47ba4",
     "__expectedType__": "cc.EffectAsset"
   },
   "_techIdx": 0,
   "_defines": [
     {
-      "USE_IRIS_CAUSTICS": true
+      "USE_IRIS_REFRACTION": true,
+      "USE_PHYSICAL_REFRACTION": true,
+      "USE_IRIS_CAUSTICS": true,
+      "USE_IRIS_MATCAP": true,
+      "USE_NORMAL_MAP": true
     },
-    {},
     {},
     {},
     {}
@@ -54,58 +57,58 @@
           {}
         ]
       }
-    },
-    {
-      "rasterizerState": {},
-      "depthStencilState": {},
-      "blendState": {
-        "targets": [
-          {}
-        ]
-      }
     }
   ],
   "_props": [
     {
-      "occlusion": 0.69,
-      "roughness": 0,
-      "specularIntensity": 0.368,
-      "mainTexture": {
-        "__uuid__": "c2606248-65e1-4ca5-9f51-5edfca982081@6c48a",
+      "roughness": 0.01,
+      "specularIntensity": 0.06,
+      "scleraColorMap": {
+        "__uuid__": "418f05b7-76d6-45c1-b980-427b6f3f4a60@6c48a",
         "__expectedType__": "cc.Texture2D"
       },
-      "irisGradientMap": {
-        "__uuid__": "6ba85702-92d1-4bf9-bc51-20e91723869c@6c48a",
+      "scleraNormalMap": {
+        "__uuid__": "b3bcf183-5065-42e7-bfe8-ed3181085726@3c318",
         "__expectedType__": "cc.Texture2D"
       },
-      "irisColorMaskMap": {
-        "__uuid__": "ac3ea641-a51b-4779-92c7-28869303d7be@6c48a",
+      "irisColorMap": {
+        "__uuid__": "82f8db6c-0048-4ebb-ba7a-ce6cbc01c641@6c48a",
         "__expectedType__": "cc.Texture2D"
       },
-      "veinsColorMap": {
-        "__uuid__": "6ee20da0-3ca9-4d9c-9ee7-f4e711ae5155@6c48a",
+      "irisColor": {
+        "__type__": "cc.Color",
+        "r": 137,
+        "g": 115,
+        "b": 129,
+        "a": 255
+      },
+      "irisNormalMap": {
+        "__uuid__": "505728ed-3622-4537-b9a7-bbf3a8fda471@3c318",
+        "__expectedType__": "cc.Texture2D"
+      },
+      "irisSize": 0.143,
+      "irisTransition": 0.019,
+      "irisWorldNormalMap": {
+        "__uuid__": "cf8dcd37-bfbf-4b61-a054-0e2fc43244e5@6c48a",
         "__expectedType__": "cc.Texture2D"
       },
       "irisHeightMap": {
-        "__uuid__": "ac3ea641-a51b-4779-92c7-28869303d7be@6c48a",
+        "__uuid__": "be0c3f5a-8b82-4c2a-b900-1fd3b451aa81@6c48a",
         "__expectedType__": "cc.Texture2D"
       },
-      "irisHeightMapAlpha": {
-        "__uuid__": "ac3ea641-a51b-4779-92c7-28869303d7be@6c48a",
+      "irisDepth": 0.107,
+      "irisFlattenNormal": 0.18,
+      "causticSize": 0.75,
+      "causticIntensity": 3.28,
+      "causticOffset": 0.66,
+      "irisMatcapMap": {
+        "__uuid__": "5775446a-45b6-4e98-8d21-0815dc91567e@6c48a",
         "__expectedType__": "cc.Texture2D"
       },
-      "irisScale": 0,
-      "veinsBleeding": 1.462,
-      "irisMainColor": 1,
-      "irisMainBright": 5,
-      "irisEdgeColor": 0.892,
-      "irisEdgeBright": 0.83,
-      "reflectionEnhancement": 1.487,
-      "causticsPosition": 1,
-      "causticsWidth": 0.422,
-      "causticsIntensity": 3
+      "matcapRotation": 2.22,
+      "matcapIntensity": 0.36,
+      "matcapFov": 1.13
     },
-    {},
     {},
     {},
     {}
